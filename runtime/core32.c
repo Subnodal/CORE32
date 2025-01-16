@@ -6,6 +6,18 @@ const c32_Byte C32_WIDTHS[4] = {1, 2, 4, 4};
 
 #define C32_FMT(inst) (inst & 0b11)
 #define C32_REL(inst) (inst & 0b100)
+#define C32_OFFSET(inst, addr) (addr + (C32_REL(inst) ? vm->ip - 1 : 0))
+
+#define C32_BIT_OP(op) {c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, a op b); break;}
+
+#define C32_FLOAT_OP(op) { \
+        if (C32_FMT(inst) == C32_FMT_FLOAT) { \
+            c32_Float b = c32_popFloat(vm, inst); c32_Float a = c32_popFloat(vm, inst); c32_pushFloat(vm, inst, a op b); \
+        } else { \
+            c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, a op b); \
+        } \
+        break; \
+    }
 
 CORE32* c32_new(c32_Byte* code, c32_Long codeLength) {
     CORE32* vm = C32_MALLOC(sizeof(CORE32));
@@ -70,8 +82,18 @@ c32_Long c32_pop(CORE32* vm, c32_Byte mode) {
     return result;
 }
 
+c32_Float c32_popFloat(CORE32* vm, c32_Byte mode) {
+    return ((c32_LongOrFloat) {.asLong = c32_pop(vm, mode)}).asFloat;
+}
+
 void c32_push(CORE32* vm, c32_Byte mode, c32_Long data) {
     c32_writeW(vm, mode, &vm->dsp, data);
+}
+
+void c32_pushFloat(CORE32* vm, c32_Byte mode, c32_Float data) {
+    c32_LongOrFloat dataLof = {.asFloat = data};
+
+    c32_writeW(vm, mode, &vm->dsp, dataLof.asLong);
 }
 
 void c32_step(CORE32* vm) {
@@ -120,15 +142,49 @@ void c32_step(CORE32* vm) {
         }
 
         case 0b00110000: { // from
-            c32_LongOrFloat a = {.asLong = c32_pop(vm, inst)};
-            c32_push(vm, C32_FMT_LONG, C32_FMT(inst) == C32_FMT_FLOAT ? a.asFloat : a.asLong);
+            c32_push(vm, C32_FMT_LONG, C32_FMT(inst) == C32_FMT_FLOAT ? ((c32_LongOrFloat) {.asLong = c32_pop(vm, inst)}).asFloat : c32_pop(vm, inst));
             break;
         }
 
         case 0b00111000: { // to
-            c32_LongOrFloat a = C32_FMT(inst) == C32_FMT_FLOAT ? (c32_LongOrFloat) {.asFloat = c32_pop(vm, C32_FMT_LONG)} : (c32_LongOrFloat) {.asLong = c32_pop(vm, C32_FMT_LONG)};
-            c32_push(vm, inst, a.asLong);
+            c32_push(vm, inst, C32_FMT(inst) == C32_FMT_FLOAT ? ((c32_LongOrFloat) {.asFloat = c32_pop(vm, C32_FMT_LONG)}).asLong : c32_pop(vm, C32_FMT_LONG));
             break;
+        }
+
+        case 0b01000000: C32_FLOAT_OP(-) // -
+        case 0b01001000: C32_FLOAT_OP(+) // +
+        case 0b01010000: C32_FLOAT_OP(/) // /
+        case 0b01011000: C32_FLOAT_OP(*) // *
+
+        case 0b01100000: C32_BIT_OP(|) // |
+        case 0b01101000: C32_BIT_OP(^) // ^
+        case 0b01110000: C32_BIT_OP(&) // &
+
+        case 0b01111000: { // !
+            c32_push(vm, inst, c32_pop(vm, inst) == 0 ? 1 : 0);
+            break;
+        }
+
+        case 0b10000000: C32_BIT_OP(!=) // !=
+        case 0b10001000: C32_BIT_OP(==) // =
+        case 0b10010000: C32_BIT_OP(>) // >
+        case 0b10011000: C32_BIT_OP(>>) // >>
+
+        case 0b10100000: { // --
+            c32_push(vm, inst, c32_pop(vm, inst) - 1);
+            break;
+        }
+
+        case 0b10101000: C32_BIT_OP(<) // <
+        case 0b10110000: C32_BIT_OP(<<) // <<
+
+        case 0b10111000: { // ++
+            c32_push(vm, inst, c32_pop(vm, inst) + 1);
+            break;
+        }
+
+        case 0b11000000: { // jump
+            vm->ip = C32_OFFSET(inst, c32_pop(vm, inst));
         }
 
         // TODO: Implement other instructions
