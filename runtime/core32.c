@@ -2,7 +2,7 @@
 
 #include "core32.h"
 
-const c32_Byte C32_WIDTHS[4] = {4, 1, 2, 4};
+const c32_Byte C32_WIDTHS[4] = {1, 2, 4, 4};
 
 #define C32_FMT(inst) (inst & 0b11)
 #define C32_REL(inst) (inst & 0b100)
@@ -40,8 +40,8 @@ void c32_write(CORE32* vm, c32_Long* p, c32_Byte data) {
     (*p)++;
 }
 
-c32_Long c32_readW(CORE32* vm, c32_Byte inst, c32_Long* p) {
-    c32_Byte width = C32_WIDTHS[C32_FMT(inst)];
+c32_Long c32_readW(CORE32* vm, c32_Byte mode, c32_Long* p) {
+    c32_Byte width = C32_WIDTHS[C32_FMT(mode)];
 
     return (
         c32_read(vm, p) |
@@ -51,8 +51,8 @@ c32_Long c32_readW(CORE32* vm, c32_Byte inst, c32_Long* p) {
     );
 }
 
-void c32_writeW(CORE32* vm, c32_Byte inst, c32_Long* p, c32_Long data) {
-    c32_Byte width = C32_WIDTHS[C32_FMT(inst)];
+void c32_writeW(CORE32* vm, c32_Byte mode, c32_Long* p, c32_Long data) {
+    c32_Byte width = C32_WIDTHS[C32_FMT(mode)];
 
     c32_write(vm, p, data & 0x000000FF);
     width >= 2 ? c32_write(vm, p, (data & 0x0000FF00) >> 8) : 0;
@@ -60,32 +60,77 @@ void c32_writeW(CORE32* vm, c32_Byte inst, c32_Long* p, c32_Long data) {
     width >= 4 ? c32_write(vm, p, (data & 0xFF000000) >> 24) : 0;
 }
 
-c32_Long c32_pop(CORE32* vm, c32_Byte inst) {
-    vm->dsp -= C32_WIDTHS[C32_FMT(inst)];
+c32_Long c32_pop(CORE32* vm, c32_Byte mode) {
+    vm->dsp -= C32_WIDTHS[C32_FMT(mode)];
 
-    c32_Long result = c32_readW(vm, inst, &vm->dsp);
+    c32_Long result = c32_readW(vm, mode, &vm->dsp);
 
-    vm->dsp -= C32_WIDTHS[C32_FMT(inst)];
+    vm->dsp -= C32_WIDTHS[C32_FMT(mode)];
 
     return result;
 }
 
-void c32_push(CORE32* vm, c32_Byte inst, c32_Long data) {
-    c32_writeW(vm, inst, &vm->dsp, data);
+void c32_push(CORE32* vm, c32_Byte mode, c32_Long data) {
+    c32_writeW(vm, mode, &vm->dsp, data);
 }
 
 void c32_step(CORE32* vm) {
     c32_Byte inst = c32_read(vm, &vm->ip);
 
     switch (inst & 0b11111000) {
-        case 0b00000000: {c32_push(vm, inst, c32_readW(vm, inst, &vm->ip)); break;} // data
-        case 0b00001000: break; // conv TODO: Implement
-        case 0b00010000: {c32_pop(vm, inst); break;} // pop
-        case 0b00011000: {c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, a); c32_push(vm, inst, a); break;} // dupe
-        case 0b00100000: {c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, b); c32_push(vm, inst, a); break;} // swap
-        case 0b00101000: {c32_Long c = c32_pop(vm, inst); c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, a); c32_push(vm, inst, c); break;} // nip
-        case 0b00110000: {c32_Long c = c32_pop(vm, inst); c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, b); c32_push(vm, inst, c); c32_push(vm, inst, a); break;} // rot
-        case 0b00111000: {c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, a); c32_push(vm, inst, b); c32_push(vm, inst, a); break;} // over
+        case 0b00000000: { // data
+            c32_push(vm, inst, c32_readW(vm, inst, &vm->ip));
+            break;
+        }
+
+        case 0b00001000: { // pop
+            c32_pop(vm, inst);
+            break;
+        }
+
+        case 0b00010000: { // nip
+            c32_Long b = c32_pop(vm, inst);
+            c32_Long a = c32_pop(vm, inst);
+            c32_push(vm, inst, b);
+            break;
+        }
+
+        case 0b00011000: { // dupe
+            c32_Long a = c32_pop(vm, inst);
+            c32_push(vm, inst, a);
+            c32_push(vm, inst, a);
+            break;
+        }
+
+        case 0b00100000: { // swap
+            c32_Long b = c32_pop(vm, inst);
+            c32_Long a = c32_pop(vm, inst);
+            c32_push(vm, inst, b);
+            c32_push(vm, inst, a);
+            break;
+        }
+
+        case 0b00101000: { // over
+            c32_Long b = c32_pop(vm, inst);
+            c32_Long a = c32_pop(vm, inst);
+            c32_push(vm, inst, a);
+            c32_push(vm, inst, b);
+            c32_push(vm, inst, a);
+            break;
+        }
+
+        case 0b00110000: { // from
+            c32_LongOrFloat a = {.asLong = c32_pop(vm, inst)};
+            c32_push(vm, C32_FMT_LONG, C32_FMT(inst) == C32_FMT_FLOAT ? a.asFloat : a.asLong);
+            break;
+        }
+
+        case 0b00111000: { // to
+            c32_LongOrFloat a = C32_FMT(inst) == C32_FMT_FLOAT ? (c32_LongOrFloat) {.asFloat = c32_pop(vm, C32_FMT_LONG)} : (c32_LongOrFloat) {.asLong = c32_pop(vm, C32_FMT_LONG)};
+            c32_push(vm, inst, a.asLong);
+            break;
+        }
+
         // TODO: Implement other instructions
     }
 }
