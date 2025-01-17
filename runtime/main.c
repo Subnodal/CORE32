@@ -2,29 +2,29 @@
 
 #include "core32.h"
 
-// unsigned char code[] = {
-//     0b00000001, 0x12, 0x34,             // 0x12 0x34
-//     0b00000001, 0xAA, 0xBB,             // 0xAA 0xBB
-//     0b00011000,                         // dupe
-//     0b00001000,                         // pop
-//     0b00000000, 0xCC,                   // 0xCC
-//     0b00100001,                         // swap'
-//     0b00010000,                         // nip
-//     0b00101000,                         // over
-//     0b00000010, 0x10, 0x20, 0x30, 0x00, // 0x10 0x20 0x30 0x00
-//     0b00110010,                         // from
-//     0b00111011,                         // to%
-//     0b00110011,                         // from%
-//     0b00110010                          // to
-// };
-
 unsigned char code[] = {
-    0b00000000, 0x00,
-    0b00110000,
-    0b10111010,
-    0b00000000, 0x03,
-    0b11000000
+    C32_OP_DATA | C32_FMT_SHORT, 0x12, 0x34,            // 0x3412
+    C32_OP_DATA | C32_FMT_SHORT, 0xAA, 0xBB,            // 0xBBAA
+    C32_OP_DUPE | C32_FMT_BYTE,                         // dupe
+    C32_OP_DROP | C32_FMT_BYTE,                         // drop
+    C32_OP_DATA | C32_FMT_BYTE, 0xCC,                   // 0xCC
+    C32_OP_SWAP | C32_FMT_SHORT,                        // swap'
+    C32_OP_NIP | C32_FMT_BYTE,                          // nip
+    C32_OP_OVER | C32_FMT_BYTE,                         // over
+    C32_OP_DATA | C32_FMT_LONG, 0x10, 0x20, 0x30, 0x00, // 0x00302010
+    C32_OP_FROM | C32_FMT_LONG,                         // from"
+    C32_OP_TO | C32_FMT_FLOAT,                          // to%
+    C32_OP_FROM | C32_FMT_FLOAT,                        // from%
+    C32_OP_TO | C32_FMT_LONG                            // to"
 };
+
+// unsigned char code[] = {
+//     C32_OP_DATA | C32_FMT_BYTE, 0x00,                   // 0x00
+//     C32_OP_FROM | C32_FMT_BYTE,                         // from
+//     C32_OP_INC | C32_FMT_LONG,                          // inc"
+//     C32_OP_DATA | C32_FMT_BYTE, 0x03,                   // 0x03
+//     C32_OP_JUMP | C32_FMT_BYTE                          // jump
+// };
 
 CORE32* vm;
 

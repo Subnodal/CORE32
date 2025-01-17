@@ -100,31 +100,31 @@ void c32_step(CORE32* vm) {
     c32_Byte inst = c32_read(vm, &vm->ip);
 
     switch (inst & 0b11111000) {
-        case 0b00000000: { // data
+        case C32_OP_DATA: {
             c32_push(vm, inst, c32_readW(vm, inst, &vm->ip));
             break;
         }
 
-        case 0b00001000: { // pop
+        case C32_OP_DROP: {
             c32_pop(vm, inst);
             break;
         }
 
-        case 0b00010000: { // nip
+        case C32_OP_NIP: {
             c32_Long b = c32_pop(vm, inst);
             c32_Long a = c32_pop(vm, inst);
             c32_push(vm, inst, b);
             break;
         }
 
-        case 0b00011000: { // dupe
+        case C32_OP_DUPE: {
             c32_Long a = c32_pop(vm, inst);
             c32_push(vm, inst, a);
             c32_push(vm, inst, a);
             break;
         }
 
-        case 0b00100000: { // swap
+        case C32_OP_SWAP: {
             c32_Long b = c32_pop(vm, inst);
             c32_Long a = c32_pop(vm, inst);
             c32_push(vm, inst, b);
@@ -132,7 +132,7 @@ void c32_step(CORE32* vm) {
             break;
         }
 
-        case 0b00101000: { // over
+        case C32_OP_OVER: {
             c32_Long b = c32_pop(vm, inst);
             c32_Long a = c32_pop(vm, inst);
             c32_push(vm, inst, a);
@@ -141,49 +141,49 @@ void c32_step(CORE32* vm) {
             break;
         }
 
-        case 0b00110000: { // from
+        case C32_OP_FROM: {
             c32_push(vm, C32_FMT_LONG, C32_FMT(inst) == C32_FMT_FLOAT ? ((c32_LongOrFloat) {.asLong = c32_pop(vm, inst)}).asFloat : c32_pop(vm, inst));
             break;
         }
 
-        case 0b00111000: { // to
+        case C32_OP_TO: {
             c32_push(vm, inst, C32_FMT(inst) == C32_FMT_FLOAT ? ((c32_LongOrFloat) {.asFloat = c32_pop(vm, C32_FMT_LONG)}).asLong : c32_pop(vm, C32_FMT_LONG));
             break;
         }
 
-        case 0b01000000: C32_FLOAT_OP(-) // -
-        case 0b01001000: C32_FLOAT_OP(+) // +
-        case 0b01010000: C32_FLOAT_OP(/) // /
-        case 0b01011000: C32_FLOAT_OP(*) // *
+        case C32_OP_SUB: C32_FLOAT_OP(-)
+        case C32_OP_ADD: C32_FLOAT_OP(+)
+        case C32_OP_DIV: C32_FLOAT_OP(/)
+        case C32_OP_MUL: C32_FLOAT_OP(*)
 
-        case 0b01100000: C32_BIT_OP(|) // |
-        case 0b01101000: C32_BIT_OP(^) // ^
-        case 0b01110000: C32_BIT_OP(&) // &
+        case C32_OP_OR: C32_BIT_OP(|)
+        case C32_OP_XOR: C32_BIT_OP(^)
+        case C32_OP_AND: C32_BIT_OP(&)
 
-        case 0b01111000: { // !
+        case C32_OP_NOT: {
             c32_push(vm, inst, c32_pop(vm, inst) == 0 ? 1 : 0);
             break;
         }
 
-        case 0b10000000: C32_BIT_OP(!=) // !=
-        case 0b10001000: C32_BIT_OP(==) // =
-        case 0b10010000: C32_BIT_OP(>) // >
-        case 0b10011000: C32_BIT_OP(>>) // >>
+        case C32_OP_NEQ: C32_BIT_OP(!=)
+        case C32_OP_EQ: C32_BIT_OP(==)
+        case C32_OP_GTN: C32_BIT_OP(>)
+        case C32_OP_BSR: C32_BIT_OP(>>)
 
-        case 0b10100000: { // --
+        case C32_OP_DEC: {
             c32_push(vm, inst, c32_pop(vm, inst) - 1);
             break;
         }
 
-        case 0b10101000: C32_BIT_OP(<) // <
-        case 0b10110000: C32_BIT_OP(<<) // <<
+        case C32_OP_LTN: C32_BIT_OP(<)
+        case C32_OP_BSL: C32_BIT_OP(<<)
 
-        case 0b10111000: { // ++
+        case C32_OP_INC: {
             c32_push(vm, inst, c32_pop(vm, inst) + 1);
             break;
         }
 
-        case 0b11000000: { // jump
+        case C32_OP_JUMP: {
             vm->ip = C32_OFFSET(inst, c32_pop(vm, inst));
         }
 
