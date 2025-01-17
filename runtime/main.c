@@ -9,13 +9,15 @@ unsigned char code[] = {
     C32_OP_DROP | C32_FMT_BYTE,                         // drop
     C32_OP_DATA | C32_FMT_BYTE, 0xCC,                   // 0xCC
     C32_OP_SWAP | C32_FMT_SHORT,                        // swap'
-    C32_OP_NIP | C32_FMT_BYTE,                          // nip
     C32_OP_OVER | C32_FMT_BYTE,                         // over
     C32_OP_DATA | C32_FMT_LONG, 0x10, 0x20, 0x30, 0x00, // 0x00302010
     C32_OP_FROM | C32_FMT_LONG,                         // from"
     C32_OP_TO | C32_FMT_FLOAT,                          // to%
     C32_OP_FROM | C32_FMT_FLOAT,                        // from%
-    C32_OP_TO | C32_FMT_LONG                            // to"
+    C32_OP_TO | C32_FMT_LONG,                           // to"
+    C32_OP_DATA | C32_FMT_LONG, 0x01, 0x02, 0x03, 0x04, // 0x04030201
+    C32_OP_DATA | C32_FMT_LONG, 0x01, 0x01, 0x01, 0x01, // 0x01010101
+    C32_OP_SUB | C32_FMT_LONG                           // -"
 };
 
 // unsigned char code[] = {

@@ -110,12 +110,7 @@ void c32_step(CORE32* vm) {
             break;
         }
 
-        case C32_OP_NIP: {
-            c32_Long b = c32_pop(vm, inst);
-            c32_Long a = c32_pop(vm, inst);
-            c32_push(vm, inst, b);
-            break;
-        }
+        case C32_OP_MOD: C32_BIT_OP(%)
 
         case C32_OP_DUPE: {
             c32_Long a = c32_pop(vm, inst);

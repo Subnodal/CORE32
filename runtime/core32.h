@@ -9,9 +9,9 @@
 
 #define C32_MEM_SIZE 0x10000
 
-#define C32_OP_DATA     0b00000000
+#define C32_OP_RET      0b00000000
 #define C32_OP_DROP     0b00001000
-#define C32_OP_NIP      0b00010000
+#define C32_OP_MOD      0b00010000
 #define C32_OP_DUPE     0b00011000
 #define C32_OP_SWAP     0b00100000
 #define C32_OP_OVER     0b00101000
@@ -33,9 +33,9 @@
 #define C32_OP_LTN      0b10101000
 #define C32_OP_BSL      0b10110000
 #define C32_OP_INC      0b10111000
-#define C32_OP_JUMP     0b11000000
-#define C32_OP_CALL     0b11001000
-#define C32_OP_RET      0b11010000
+#define C32_OP_DATA     0b11000000
+#define C32_OP_JUMP     0b11001000
+#define C32_OP_CALL     0b11010000
 #define C32_OP_INT      0b11011000
 #define C32_OP_GET      0b11100000
 #define C32_OP_SET      0b11101000
