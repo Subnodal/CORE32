@@ -30,18 +30,18 @@
 // };
 
 unsigned char code[] = {
-    C32_OP_DATA | C32_FMT_BYTE, 0x00,                       // 0x00
-    C32_OP_DUP | C32_FMT_BYTE,                              // dup
-    C32_OP_INT | C32_FMT_BYTE,                              // int
-    C32_OP_INC | C32_FMT_BYTE,                              // ++
-    C32_OP_DUP | C32_FMT_BYTE,                              // dup
-    C32_OP_DATA | C32_FMT_BYTE, 0xFF,                       // 0xFF
-    C32_OP_NEQ | C32_FMT_BYTE,                              // !=
-    C32_OP_DATA | C32_FMT_BYTE, 0x02,                       // 0x02
-    C32_OP_IF | C32_FMT_BYTE,                               // if
-    C32_OP_DATA | C32_FMT_BYTE, 0x0A,                       // '\n'
-    C32_OP_INT | C32_FMT_BYTE,                              // int
-    C32_OP_RET                                              // ret
+    C32_OP_DATA | C32_FMT_BYTE, 0x00,                   // 0x00
+    C32_OP_DUP | C32_FMT_BYTE,                          // dup
+    C32_OP_INT | C32_FMT_BYTE,                          // int
+    C32_OP_INC | C32_FMT_BYTE,                          // ++
+    C32_OP_DUP | C32_FMT_BYTE,                          // dup
+    C32_OP_DATA | C32_FMT_BYTE, 0xFF,                   // 0xFF
+    C32_OP_NEQ | C32_FMT_BYTE,                          // !=
+    C32_OP_DATA | C32_FMT_BYTE, 0x02,                   // 0x02
+    C32_OP_IF | C32_FMT_BYTE,                           // if
+    C32_OP_DATA | C32_FMT_BYTE, 0x0A,                   // '\n'
+    C32_OP_INT | C32_FMT_BYTE,                          // int
+    C32_OP_RET                                          // ret
 };
 
 CORE32* vm;
