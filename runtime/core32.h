@@ -8,11 +8,13 @@
 #define C32_FREE free
 
 #define C32_MEM_SIZE 0x10000
+#define C32_CSP_BASE 0x100
+#define C32_DSP_BASE 0x200
 
 #define C32_OP_RET      0b00000000
 #define C32_OP_DROP     0b00001000
 #define C32_OP_MOD      0b00010000
-#define C32_OP_DUPE     0b00011000
+#define C32_OP_DUP      0b00011000
 #define C32_OP_SWAP     0b00100000
 #define C32_OP_OVER     0b00101000
 #define C32_OP_FROM     0b00110000
@@ -39,7 +41,7 @@
 #define C32_OP_INT      0b11011000
 #define C32_OP_GET      0b11100000
 #define C32_OP_SET      0b11101000
-#define C32_OP_ELSE     0b11110000
+#define C32_OP_CIF      0b11110000
 #define C32_OP_IF       0b11111000
 
 #define C32_REL_ABS     0b0
@@ -64,6 +66,7 @@ typedef struct CORE32 {
     c32_Long ip; // Instruction pointer
     c32_Long csp; // Core stack pointer
     c32_Long dsp; // Data stack pointer
+    c32_Byte running;
     c32_Byte* mem;
 } CORE32;
 
