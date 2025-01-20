@@ -11,6 +11,24 @@
         goto addToken; \
     }
 
+char* opNames[] = {
+//  *000    *001    *010    *101    *110    *101    *110    *111
+    "ret",  "drop", "mod",  "dup",  "swap", "over", "from", "to",   // 00*
+    "sub",  "add",  "div",  "mul",  "or",   "xor",  "and",  "not",  // 01*
+    "neq",  "eq",   "gtn",  "bsr",  "dec",  "ltn",  "bsl",  "inc",  // 10*
+    "data", "jump", "call", "int",  "get",  "set",  "cif",  "if",   // 11*
+    NULL
+};
+
+char* opSymbols[] = {
+//  *000    *001    *010    *101    *110    *101    *110    *111
+    "",     "",     "%",    "",     "",     "",     "",     "",     // 00*
+    "-",    "+",    "/",    "*",    "|",    "^",    "&",    "!",    // 01*
+    "!=",   "=",    ">",    ">>"    "--",   "<",    "<<",   "++",   // 10*
+    "",     "",     "",     "",     "",     "",     "",     "",     // 11*
+    NULL
+};
+
 bool matchChars(char** codePtr, char* match) {
     unsigned int i = 0;
 
@@ -24,6 +42,27 @@ bool matchChars(char** codePtr, char* match) {
 
         i++;
     }
+}
+
+bool matchInList(char** codePtr, char* list[], unsigned int* index) {
+    unsigned int i = 0;
+
+    while (list[i]) {
+        if (!list[i][0]) {
+            // Ignore empty entries
+            i++;
+            continue;
+        }
+
+        if (matchChars(codePtr, list[i])) {
+            *index = i;
+            return true;
+        }
+
+        i++;
+    }
+
+    return false;
 }
 
 bool matchUInt(char** codePtr, int base, unsigned int* result) {
@@ -99,6 +138,14 @@ Token* parse(char* code) {
             continue;
         }
 
+        if (matchInList(&code, opNames, &intResult) || matchInList(&code, opSymbols, &intResult)) {
+            tokenToAdd.type = TOK_OP;
+            tokenToAdd.value.asOpcode = intResult << 3;
+            tokenToAdd.format = getFormatSuffix(&code);
+
+            goto addToken;
+        }
+
         MATCH_BASE("0b", 2);
         MATCH_BASE("0o", 8);
         MATCH_BASE("0x", 16);
@@ -153,6 +200,10 @@ void inspect(Token* token) {
     switch (token->type) {
         case TOK_ERROR:
             printf("(error) ");
+            break;
+
+        case TOK_OP:
+            printf("op(%s%s) ", opNames[token->value.asOpcode >> 3], inspectFormat(token));
             break;
 
         case TOK_INT:

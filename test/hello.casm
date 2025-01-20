@@ -3,3 +3,13 @@
 (octal)         0o777 0o777' 0o777" 0o777%
 (hexadecimal)   0xF0 0xF0' 0xF0" 0xF0%
                 0xf0 0xf0' 0xf0" 0xf0%
+
+(opcodes)       ret drop mod dup swap over from to sub add div mul or xor and
+                not neq eq gtn bsr dec ltn bsl inc data jump call int get set
+                cif if
+
+(opcode syms)   % - + / * | ^ & ! != = > >> -- < << ++
+
+(opcodes with suffixes)
+                add' add" add%
+                +' +" +%

@@ -5,6 +5,7 @@
 
 typedef enum {
     TOK_ERROR,
+    TOK_OP,
     TOK_INT
 } TokenType;
 
@@ -19,6 +20,7 @@ typedef struct Token {
     TokenType type;
     union {
         int asInt;
+        unsigned char asOpcode;
     } value;
     Format format;
     struct Token* next;
