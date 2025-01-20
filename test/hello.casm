@@ -1,1 +1,5 @@
-123 456
+(denary)        123 456
+(binary)        0b101010
+(octal)         0o777
+(hexadecimal)   0xF0
+                0xf0

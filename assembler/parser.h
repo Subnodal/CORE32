@@ -20,12 +20,13 @@ typedef struct Token {
     union {
         int asInt;
     } value;
-    // TODO: Include format info
+    Format format;
     struct Token* next;
 } Token;
 
-unsigned int matchChars(char* code, char* match);
-unsigned int matchUInt(char* code, int base, unsigned int* result, Format* format);
+bool matchChars(char** codePtr, char* match);
+bool matchUInt(char** codePtr, int base, unsigned int* result);
+Format getFormatSuffix(char** codePtr);
 
 Token* parse(char* code);
 void inspect(Token* token);
