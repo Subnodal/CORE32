@@ -1,5 +1,5 @@
-(denary)        123 456
-(binary)        0b101010
-(octal)         0o777
-(hexadecimal)   0xF0
-                0xf0
+(denary)        123 456 123456' 123456" 123456%
+(binary)        0b101010 0b101010' 0b101010" 0b101010%
+(octal)         0o777 0o777' 0o777" 0o777%
+(hexadecimal)   0xF0 0xF0' 0xF0" 0xF0%
+                0xf0 0xf0' 0xf0" 0xf0%

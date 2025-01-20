@@ -68,6 +68,11 @@ Format getFormatSuffix(char** code) {
         return FMT_SHORT;
     }
 
+    if ((*code)[0] == '%') {
+        (*code)++;
+        return FMT_FLOAT;
+    }
+
     return FMT_LONG;
 }
 
@@ -116,6 +121,7 @@ Token* parse(char* code) {
 
         tokenPtr->type = tokenToAdd.type;
         tokenPtr->value = tokenToAdd.value;
+        tokenPtr->format = tokenToAdd.format;
         tokenPtr->next = NULL;
 
         if (!firstToken) firstToken = tokenPtr;
@@ -131,6 +137,13 @@ Token* parse(char* code) {
     return firstToken;
 }
 
+const char* inspectFormat(Token* token) {
+    if (token->format == FMT_BYTE) return "'";
+    if (token->format == FMT_SHORT) return "\"";
+    if (token->format == FMT_FLOAT) return "%";
+    return "";
+}
+
 void inspect(Token* token) {
     if (!token) {
         printf("\n");
@@ -143,12 +156,12 @@ void inspect(Token* token) {
             break;
 
         case TOK_INT:
-            printf("int(%d) ", token->value.asInt);
+            printf("int(%d%s) ", token->value.asInt, inspectFormat(token));
             break;
 
         default:
             printf("(unknown) ");
-            break;;
+            break;
     }
 
     inspect(token->next);
