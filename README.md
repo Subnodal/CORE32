@@ -1,6 +1,25 @@
 # CORE32
 A small, stack-based virtual machine.
 
+## Building and running
+To build the CORE32 runtime and assembler, run:
+
+```bash
+./build.sh
+```
+
+To run the runtime with the binary file `$FILE`, run:
+
+```bash
+runtime/build/core32 $FILE
+```
+
+To assemble the assembly code file `$FILE`, run:
+
+```bash
+assembler/build/coreasm $FILE
+```
+
 ## Format
 Instruction format: `ooooorff`
 
