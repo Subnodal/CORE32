@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define MATCH_BASE(prefix, base) if (matchChars(&code, prefix)) { \
+#define MATCH_BASE(prefix, base) if (matchChars(&code, prefix, false)) { \
     if (!matchUInt(&code, base, &intResult)) goto error; \
         tokenToAdd.type = TOK_INT; \
         tokenToAdd.value.asInt = intResult; \
@@ -24,16 +24,26 @@ char* opSymbols[] = {
 //  *000    *001    *010    *101    *110    *101    *110    *111
     "",     "",     "%",    "",     "",     "",     "",     "",     // 00*
     "-",    "+",    "/",    "*",    "|",    "^",    "&",    "!",    // 01*
-    "!=",   "=",    ">",    ">>"    "--",   "<",    "<<",   "++",   // 10*
+    "!=",   "=",    ">",    ">>",   "--",   "<",    "<<",   "++",   // 10*
     "",     "",     "",     "",     "",     "",     "",     "",     // 11*
     NULL
 };
 
-bool matchChars(char** codePtr, char* match) {
+bool matchChars(char** codePtr, char* match, bool whole) {
     unsigned int i = 0;
 
     while (true) {
         if (!match[i]) {
+            char final = (*codePtr)[i];
+
+            if (whole && !(
+                final == '\0' || final == ' ' || final == '\t' || final == '\n' ||
+                final == '\'' || final == '"' || final == '%' ||
+                final == ':' || final == ']' || final == '}'
+            )) {
+                return false;
+            }
+
             (*codePtr) += i;
             return true;
         }
@@ -44,7 +54,7 @@ bool matchChars(char** codePtr, char* match) {
     }
 }
 
-bool matchInList(char** codePtr, char* list[], unsigned int* index) {
+bool matchInList(char** codePtr, char* list[], unsigned int* index, bool whole) {
     unsigned int i = 0;
 
     while (list[i]) {
@@ -54,7 +64,7 @@ bool matchInList(char** codePtr, char* list[], unsigned int* index) {
             continue;
         }
 
-        if (matchChars(codePtr, list[i])) {
+        if (matchChars(codePtr, list[i], whole)) {
             *index = i;
             return true;
         }
@@ -187,21 +197,21 @@ Token* parse(char* code) {
             goto addToken;
         }
 
-        if (matchChars(&code, "?{")) {
+        if (matchChars(&code, "?{", false)) {
             tokenToAdd.type = TOK_GROUP_OPEN;
             tokenToAdd.value.asGroupType = GROUP_COND;
 
             goto addToken;
         }
 
-        if (matchChars(&code, ":{")) {
+        if (matchChars(&code, ":{", false)) {
             tokenToAdd.type = TOK_GROUP_OPEN;
             tokenToAdd.value.asGroupType = GROUP_QUOTED;
 
             goto addToken;
         }
 
-        if (matchInList(&code, opNames, &intResult) || matchInList(&code, opSymbols, &intResult)) {
+        if (matchInList(&code, opNames, &intResult, true) || matchInList(&code, opSymbols, &intResult, true)) {
             tokenToAdd.type = TOK_OP;
             tokenToAdd.value.asOpcode = intResult << 3;
             tokenToAdd.format = getFormatSuffix(&code);
@@ -217,6 +227,37 @@ Token* parse(char* code) {
             if (code[0] == ':') {
                 tokenToAdd.type = TOK_DEFINE;
                 code++;
+            }
+
+            goto addToken;
+        }
+
+        if (code[0] == '?' || code[0] == '$' || code[0] == '.') {
+            char prefix = code[0];
+            bool local = prefix == '.';
+
+            code++;
+
+            if (!local && code[0] == '.') {
+                local = true;
+                code++;
+            }
+
+            if (!matchIdentifier(&code, &hashResult)) {
+                goto error;
+            }
+
+            tokenToAdd.type = TOK_CALL;
+            tokenToAdd.value.asIdHash = hashResult;
+            tokenToAdd.format = local ? FMT_LOCAL : FMT_GLOBAL;
+
+            if (prefix == '.' && code[0] == ':') {
+                tokenToAdd.type = TOK_DEFINE;
+                code++;
+            } else if (prefix == '?') {
+                tokenToAdd.type = TOK_CALL_COND;
+            } else if (prefix == '$') {
+                tokenToAdd.type = code[0] == '.' ? TOK_ADDR_EXT : TOK_ADDR;
             }
 
             goto addToken;
@@ -296,6 +337,14 @@ void inspect(Token* token) {
 
         case TOK_CALL_COND:
             printf("callif(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            break;
+
+        case TOK_ADDR:
+            printf("addr(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            break;
+
+        case TOK_ADDR_EXT:
+            printf("addrext(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
             break;
 
         case TOK_RAW_OPEN:

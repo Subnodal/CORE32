@@ -11,6 +11,7 @@ typedef enum {
     TOK_CALL,
     TOK_CALL_COND,
     TOK_ADDR,
+    TOK_ADDR_EXT,
     TOK_RAW_OPEN,
     TOK_RAW_CLOSE,
     TOK_GROUP_OPEN,
@@ -44,8 +45,10 @@ typedef struct Token {
     struct Token* next;
 } Token;
 
-bool matchChars(char** codePtr, char* match);
+bool matchChars(char** codePtr, char* match, bool whole);
+bool matchInList(char** codePtr, char* list[], unsigned int* index, bool whole);
 bool matchUInt(char** codePtr, int base, unsigned int* result);
+bool matchIdentifier(char** codePtr, unsigned long* result);
 Format getFormatSuffix(char** codePtr);
 
 Token* parse(char* code);
