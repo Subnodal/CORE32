@@ -138,6 +138,35 @@ Token* parse(char* code) {
             continue;
         }
 
+        if (code[0] == '[' || code[0] == ']') {
+            tokenToAdd.type = code[0] == ']' ? TOK_RAW_CLOSE : TOK_RAW_OPEN;
+            code++;
+
+            goto addToken;
+        }
+
+        if (code[0] == '{' || code[0] == '}') {
+            tokenToAdd.type = code[0] == '}' ? TOK_GROUP_CLOSE : TOK_GROUP_OPEN;
+            tokenToAdd.value.asGroupType = GROUP_STD;
+            code++;
+
+            goto addToken;
+        }
+
+        if (matchChars(&code, "?{")) {
+            tokenToAdd.type = TOK_GROUP_OPEN;
+            tokenToAdd.value.asGroupType = GROUP_COND;
+
+            goto addToken;
+        }
+
+        if (matchChars(&code, ":{")) {
+            tokenToAdd.type = TOK_GROUP_OPEN;
+            tokenToAdd.value.asGroupType = GROUP_QUOTED;
+
+            goto addToken;
+        }
+
         if (matchInList(&code, opNames, &intResult) || matchInList(&code, opSymbols, &intResult)) {
             tokenToAdd.type = TOK_OP;
             tokenToAdd.value.asOpcode = intResult << 3;
@@ -208,6 +237,22 @@ void inspect(Token* token) {
 
         case TOK_INT:
             printf("int(%d%s) ", token->value.asInt, inspectFormat(token));
+            break;
+
+        case TOK_RAW_OPEN:
+            printf("raw ");
+            break;
+
+        case TOK_RAW_CLOSE:
+            printf("endraw ");
+            break;
+
+        case TOK_GROUP_OPEN:
+            printf("group(%c) ", token->value.asGroupType);
+            break;
+
+        case TOK_GROUP_CLOSE:
+            printf("endgroup ");
             break;
 
         default:

@@ -13,3 +13,7 @@
 (opcodes with suffixes)
                 add' add" add%
                 +' +" +%
+
+(raw values)    [123 0b101010 0xF0"]
+
+(groups)        {0x1234 get} ?{0x1234 get} :{0x1234 get}

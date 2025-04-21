@@ -6,8 +6,18 @@
 typedef enum {
     TOK_ERROR,
     TOK_OP,
-    TOK_INT
+    TOK_INT,
+    TOK_RAW_OPEN,
+    TOK_RAW_CLOSE,
+    TOK_GROUP_OPEN,
+    TOK_GROUP_CLOSE
 } TokenType;
+
+typedef enum {
+    GROUP_STD = '.',
+    GROUP_COND = '?',
+    GROUP_QUOTED = ':'
+} GroupType;
 
 typedef enum {
     FMT_BYTE = 0b00,
@@ -21,6 +31,7 @@ typedef struct Token {
     union {
         int asInt;
         unsigned char asOpcode;
+        GroupType asGroupType;
     } value;
     Format format;
     struct Token* next;
