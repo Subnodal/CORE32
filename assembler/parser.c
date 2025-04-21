@@ -32,7 +32,7 @@ char* opSymbols[] = {
 bool matchChars(char** codePtr, char* match) {
     unsigned int i = 0;
 
-    while (1) {
+    while (true) {
         if (!match[i]) {
             (*codePtr) += i;
             return true;
@@ -71,7 +71,7 @@ bool matchUInt(char** codePtr, int base, unsigned int* result) {
 
     *result = 0;
 
-    while (1) {
+    while (true) {
         if (
             (code[i] == '0' || code[i] == '1') ||
             (base >= 8 && code[i] >= '2' && code[i] <= '7') ||
@@ -92,8 +92,41 @@ bool matchUInt(char** codePtr, int base, unsigned int* result) {
         i++;
     }
 
-    (*codePtr) += i;
+    *codePtr += i;
+
     return i > 0;
+}
+
+bool matchIdentifier(char** codePtr, unsigned long* result) {
+    // Using djb2 algorithm for hashing
+
+    unsigned int i = 0;
+    unsigned char* code = *codePtr;
+    unsigned long hash = 5381;
+
+    while (true) {
+        if (!(
+            (code[i] >= 'a' && code[i] <= 'z') ||
+            (code[i] >= 'A' && code[i] <= 'Z') ||
+            code[i] == '_' ||
+            (i > 0 && code[i] >= '0' && code[i] <= '9')
+        )) {
+            break;
+        }
+
+        hash = (hash << 5) + hash + code[i];
+
+        i++;
+    }
+
+    if (i == 0) {
+        return false;
+    }
+
+    *codePtr += i;
+    *result = hash;
+
+    return true;
 }
 
 Format getFormatSuffix(char** code) {
@@ -122,6 +155,7 @@ Token* parse(char* code) {
     unsigned int length;
     int commentLevel = 0;
     unsigned int intResult = 0;
+    unsigned long hashResult = 0;
     Format resultFormat = FMT_BYTE;
 
     while (code[0]) {
@@ -171,6 +205,19 @@ Token* parse(char* code) {
             tokenToAdd.type = TOK_OP;
             tokenToAdd.value.asOpcode = intResult << 3;
             tokenToAdd.format = getFormatSuffix(&code);
+
+            goto addToken;
+        }
+
+        if (matchIdentifier(&code, &hashResult)) {
+            tokenToAdd.type = TOK_CALL;
+            tokenToAdd.value.asIdHash = hashResult;
+            tokenToAdd.format = FMT_GLOBAL;
+
+            if (code[0] == ':') {
+                tokenToAdd.type = TOK_DEFINE;
+                code++;
+            }
 
             goto addToken;
         }
@@ -237,6 +284,18 @@ void inspect(Token* token) {
 
         case TOK_INT:
             printf("int(%d%s) ", token->value.asInt, inspectFormat(token));
+            break;
+
+        case TOK_DEFINE:
+            printf("def(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            break;
+
+        case TOK_CALL:
+            printf("call(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            break;
+
+        case TOK_CALL_COND:
+            printf("callif(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
             break;
 
         case TOK_RAW_OPEN:

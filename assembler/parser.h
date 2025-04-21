@@ -7,6 +7,10 @@ typedef enum {
     TOK_ERROR,
     TOK_OP,
     TOK_INT,
+    TOK_DEFINE,
+    TOK_CALL,
+    TOK_CALL_COND,
+    TOK_ADDR,
     TOK_RAW_OPEN,
     TOK_RAW_CLOSE,
     TOK_GROUP_OPEN,
@@ -23,7 +27,9 @@ typedef enum {
     FMT_BYTE = 0b00,
     FMT_SHORT = 0b01,
     FMT_LONG = 0b10,
-    FMT_FLOAT = 0b11
+    FMT_FLOAT = 0b11,
+    FMT_GLOBAL = 0b00,
+    FMT_LOCAL = 0b01
 } Format;
 
 typedef struct Token {
@@ -31,6 +37,7 @@ typedef struct Token {
     union {
         int asInt;
         unsigned char asOpcode;
+        unsigned long asIdHash;
         GroupType asGroupType;
     } value;
     Format format;
