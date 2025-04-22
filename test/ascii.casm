@@ -1,0 +1,5 @@
+0x00' dup'
+int' ++ dup'
+0xFF' !=' 0x02' if'
+0x0A' int'
+ret

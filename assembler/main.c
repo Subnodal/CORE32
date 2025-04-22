@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "parser.h"
+#include "assembler.h"
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -27,9 +28,6 @@ int main(int argc, char* argv[]) {
 
     if (fread(data, sizeof(char), size, fp) != size) {
         fprintf(stderr, "Error reading file contents\n");
-        fclose(fp);
-
-        free(data);
 
         return 1;
     }
@@ -38,7 +36,32 @@ int main(int argc, char* argv[]) {
 
     Token* firstToken = parse(data);
 
+    fclose(fp);
+
+    free(data);
+
     inspect(firstToken);
+
+    char* output;
+    unsigned long length;
+
+    assemble(firstToken, &output, &length);
+
+    if (argc < 3) {
+        fprintf(stderr, "No output file specified\n");
+
+        return 1;
+    }
+
+    fp = fopen(argv[2], "w");
+
+    if (!fp) {
+        fprintf(stderr, "Error when writing file\n");
+
+        return 1;
+    }
+
+    fwrite(output, 1, length, fp);
 
     return 0;
 }

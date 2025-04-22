@@ -42,7 +42,7 @@ typedef enum {
 typedef struct Token {
     TokenType type;
     union {
-        int asInt;
+        unsigned long asInt;
         unsigned char asOpcode;
         unsigned long asIdHash;
         GroupType asGroupType;
