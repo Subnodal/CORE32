@@ -35,7 +35,7 @@
 #define C32_OP_LTN      0b10101000
 #define C32_OP_BSL      0b10110000
 #define C32_OP_INC      0b10111000
-#define C32_OP_DATA     0b11000000
+#define C32_OP_PUT      0b11000000
 #define C32_OP_JUMP     0b11001000
 #define C32_OP_CALL     0b11010000
 #define C32_OP_INT      0b11011000

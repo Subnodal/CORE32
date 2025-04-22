@@ -5,7 +5,7 @@
                 0xf0 0xf0' 0xf0" 0xf0%
 
 (opcodes)       ret drop mod dup swap over from to sub add div mul or xor and
-                not neq eq gtn bsr dec ltn bsl inc data jump call int get set
+                not neq eq gtn bsr dec ltn bsl inc put jump call int get set
                 cif if
 
 (opcode syms)   % - + / * | ^ & ! != = > >> -- < << ++
@@ -24,7 +24,7 @@
 
 (positions)     @123 @0xF0
                 ~123 ~0xF0
-    
+
 (offsets)       #.local #test.local
 
 (macros)        #abc: 123

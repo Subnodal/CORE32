@@ -195,7 +195,7 @@ void c32_step(CORE32* vm) {
             break;
         }
 
-        case C32_OP_DATA: {
+        case C32_OP_PUT: {
             c32_push(vm, inst, c32_readW(vm, inst, &vm->ip));
             break;
         }

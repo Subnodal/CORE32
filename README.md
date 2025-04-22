@@ -26,7 +26,7 @@ Instruction format: `ooooorff`
 Opcodes (`o`):
 
 ```
-00000 ret   01000 -     10000 !=    11000 data
+00000 ret   01000 -     10000 !=    11000 put
 00001 drop  01001 +     10001 =     11001 jump
 00010 %     01010 /     10010 >     11010 call
 00011 dup   01011 *     10011 >>    11011 int
