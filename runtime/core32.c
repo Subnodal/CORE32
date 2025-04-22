@@ -118,7 +118,7 @@ void c32_step(CORE32* vm) {
     switch (inst & 0b11111000) {
         case C32_OP_RET: {
             vm->ip = c32_popCall(vm);
-            if (vm->csp < C32_DSP_BASE) vm->running = 0;
+            if (vm->csp < C32_CSP_BASE) vm->running = 0;
             break;
         }
 
@@ -215,11 +215,13 @@ void c32_step(CORE32* vm) {
         case C32_OP_GET: {
             c32_Long p = C32_OFFSET(inst, c32_pop(vm, C32_FMT_LONG));
             c32_push(vm, inst, c32_readW(vm, inst, &p));
+            break;
         }
 
         case C32_OP_SET: {
             c32_Long p = C32_OFFSET(inst, c32_pop(vm, C32_FMT_LONG));
             c32_writeW(vm, inst, &p, c32_pop(vm, inst));
+            break;
         }
 
         case C32_OP_CIF: case C32_OP_IF: {
@@ -229,6 +231,7 @@ void c32_step(CORE32* vm) {
                 if (inst & 0b11111000 == C32_OP_CIF) c32_pushCall(vm, vm->ip);
                 vm->ip = p;
             }
+            break;
         }
     }
 }

@@ -1,5 +1,9 @@
-0x00' dup'
-int' ++ dup'
-0xFF' !=' 0x02' if'
-0x0A' int'
-ret
+start:
+    0x00'
+
+loop:
+    dup' int'
+    ++'
+    dup' 0xFF' !=' $loop if
+    0x0A' int'
+    ret

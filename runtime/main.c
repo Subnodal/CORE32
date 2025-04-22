@@ -33,7 +33,7 @@ unsigned char code[] = {
     C32_OP_PUT | C32_FMT_BYTE, 0x00,                    // 0x00'
     C32_OP_DUP | C32_FMT_BYTE,                          // dup'
     C32_OP_INT | C32_FMT_BYTE,                          // int'
-    C32_OP_INC | C32_FMT_BYTE,                          // ++
+    C32_OP_INC | C32_FMT_BYTE,                          // ++'
     C32_OP_DUP | C32_FMT_BYTE,                          // dup'
     C32_OP_PUT | C32_FMT_BYTE, 0xFF,                    // 0xFF'
     C32_OP_NEQ | C32_FMT_BYTE,                          // !='

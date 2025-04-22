@@ -1,0 +1,65 @@
+start:
+    test1
+    test2
+    test3
+    ret
+
+outputHexDigit:
+    dup' 9' >' $.letter if
+    0x30' +' int' ret
+
+    .letter:
+        0x37' +' int' ret
+
+outputHexByte:
+    dup' 4' >>' outputHexDigit
+    0b1111' &' outputHexDigit
+    ret
+
+outputHexLong:
+    outputHexByte
+    outputHexByte
+    outputHexByte
+    outputHexByte
+    0x0A' int'
+    ret
+
+test1: ( Simple count-controlled loop )
+    0x41' int' ( Print A )
+
+    10 ( Loop 10 times )
+
+    .loop:
+        0x42' int' ( Print B )
+        -- ( Decrement loop counter )
+        dup 0 > $.loop if ( Loop if not zero )
+
+    0x0A' int' ( Print newline )
+
+    ret
+
+test2: ( Outputting hex )
+    0xA1B2C3D4 outputHexLong
+    0x0A' int'
+    ret
+
+test3: ( Fibonacci sequence )
+    0 $.a set
+    1 $.b set
+
+    10
+
+    .loop:
+        $.a get
+        $.b get
+        +
+        dup outputHexLong
+        $.b get $.a set
+        $.b set
+
+        --
+        dup 0 > $.loop if
+
+    ret
+
+    .a: ~4 .b: ~4
