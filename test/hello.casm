@@ -21,3 +21,11 @@
 (raw values)    [123 0b101010 0xF0"]
 
 (groups)        {0x1234 get} ?{0x1234 get} :{0x1234 get}
+
+(positions)     @123 @0xF0
+                ~123 ~0xF0
+    
+(offsets)       #.local #test.local
+
+(macros)        #abc: 123
+                #abc

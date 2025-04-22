@@ -15,7 +15,13 @@ typedef enum {
     TOK_RAW_OPEN,
     TOK_RAW_CLOSE,
     TOK_GROUP_OPEN,
-    TOK_GROUP_CLOSE
+    TOK_GROUP_CLOSE,
+    TOK_POS_ABS,
+    TOK_POS_OFFSET,
+    TOK_LOCAL_OFFSET,
+    TOK_LOCAL_OFFSET_EXT,
+    TOK_MACRO,
+    TOK_MACRO_DEFINE
 } TokenType;
 
 typedef enum {

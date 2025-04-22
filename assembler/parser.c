@@ -5,7 +5,7 @@
 
 #define MATCH_BASE(prefix, base) if (matchChars(&code, prefix, false)) { \
     if (!matchUInt(&code, base, &intResult)) goto error; \
-        tokenToAdd.type = TOK_INT; \
+        tokenToAdd.type = numberTokenType; \
         tokenToAdd.value.asInt = intResult; \
         tokenToAdd.format = getFormatSuffix(&code); \
         goto addToken; \
@@ -169,6 +169,8 @@ Token* parse(char* code) {
     Format resultFormat = FMT_BYTE;
 
     while (code[0]) {
+        TokenType numberTokenType = TOK_INT;
+
         if (code[0] == '(') commentLevel++;
 
         if (code[0] == ')' && commentLevel > 0) {
@@ -263,12 +265,52 @@ Token* parse(char* code) {
             goto addToken;
         }
 
+        if (code[0] == '#') {
+            bool isLocalOffset = false;
+
+            code++;
+
+            if (code[0] == '.') {
+                isLocalOffset = true;
+                code++;
+            }
+
+            if (!matchIdentifier(&code, &hashResult)) {
+                goto error;
+            }
+
+            tokenToAdd.type = TOK_MACRO;
+            tokenToAdd.value.asIdHash = hashResult;
+
+            if (isLocalOffset) {
+                tokenToAdd.type = TOK_LOCAL_OFFSET;
+                goto addToken;
+            }
+
+            if (code[0] == '.') {
+                tokenToAdd.type = TOK_LOCAL_OFFSET_EXT;
+            } else if (code[0] == ':') {
+                tokenToAdd.type = TOK_MACRO_DEFINE;
+                code++;
+            }
+
+            goto addToken;
+        }
+
+        if (code[0] == '@') {
+            numberTokenType = TOK_POS_ABS;
+            code++;
+        } else if (code[0] == '~') {
+            numberTokenType = TOK_POS_OFFSET;
+            code++;
+        }
+
         MATCH_BASE("0b", 2);
         MATCH_BASE("0o", 8);
         MATCH_BASE("0x", 16);
 
         if (matchUInt(&code, 10, &intResult)) {
-            tokenToAdd.type = TOK_INT;
+            tokenToAdd.type = numberTokenType;
             tokenToAdd.value.asInt = intResult;
             tokenToAdd.format = getFormatSuffix(&code);
 
@@ -361,6 +403,30 @@ void inspect(Token* token) {
 
         case TOK_GROUP_CLOSE:
             printf("endgroup ");
+            break;
+
+        case TOK_POS_ABS:
+            printf("posabs(%ld%s) ", token->value.asInt, inspectFormat(token));
+            break;
+
+        case TOK_POS_OFFSET:
+            printf("posoffset(%ld%s) ", token->value.asInt, inspectFormat(token));
+            break;
+
+        case TOK_LOCAL_OFFSET:
+            printf("offset(.%ld) ", token->value.asIdHash);
+            break;
+
+        case TOK_LOCAL_OFFSET_EXT:
+            printf("offsetext(%ld) ", token->value.asIdHash);
+            break;
+
+        case TOK_MACRO:
+            printf("macro(%ld) ", token->value.asIdHash);
+            break;
+
+        case TOK_MACRO_DEFINE:
+            printf("defmacro(%ld) ", token->value.asIdHash);
             break;
 
         default:
