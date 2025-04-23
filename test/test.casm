@@ -2,6 +2,7 @@ start:
     test1
     test2
     test3
+    test4
     ret
 
 outputHexDigit:
@@ -44,15 +45,15 @@ test2: ( Outputting hex )
     ret
 
 test3: ( Fibonacci sequence )
+    ${.a: ~4 .b: ~4}
+
     0 $.a set
     1 $.b set
 
     10
 
     .loop:
-        $.a get
-        $.b get
-        +
+        {$.a get} {$.b get} +
         dup outputHexLong
         $.b get $.a set
         $.b set
@@ -62,4 +63,14 @@ test3: ( Fibonacci sequence )
 
     ret
 
-    .a: ~4 .b: ~4
+test4: ( Groups )
+    {0x41' int'}
+    {0' ?{0x42' int'}}
+    {1' ?{0x43' int'}}
+    :{0x44' int' ret}
+    ${0x45' int'}
+    call
+
+    0x0A' int'
+
+    ret

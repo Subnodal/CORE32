@@ -213,6 +213,13 @@ Token* parse(char* code) {
             goto addToken;
         }
 
+        if (matchChars(&code, "${", false)) {
+            tokenToAdd.type = TOK_GROUP_OPEN;
+            tokenToAdd.value.asGroupType = GROUP_SKIPPED;
+
+            goto addToken;
+        }
+
         if (matchInList(&code, opNames, &intResult, true) || matchInList(&code, opSymbols, &intResult, true)) {
             tokenToAdd.type = TOK_OP;
             tokenToAdd.value.asOpcode = intResult << 3;

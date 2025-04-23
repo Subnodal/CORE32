@@ -12,6 +12,8 @@ Label* firstLabel;
 Label* lastLabel;
 Reference* firstReference;
 Reference* lastReference;
+GroupLevel* firstGroupLevel;
+GroupLevel* lastGroupLevel;
 
 void grow() {
     unsigned long oldLength = length;
@@ -25,12 +27,27 @@ void grow() {
     if (oldLength / BLOCK_SIZE < length / BLOCK_SIZE) {
         unsigned long baseLength = (length / BLOCK_SIZE) * BLOCK_SIZE;
 
+        printf("Growing from 0x%08x\n", baseLength);
+
         output = realloc(output, baseLength + BLOCK_SIZE);
 
-        for (unsigned int i = 0; i < BLOCK_SIZE; i++) {
-            output[baseLength + i] = '\0';
+        for (unsigned int i = oldLength; i < baseLength + BLOCK_SIZE; i++) {
+            output[i] = '\0';
         }
     }
+}
+
+void outputB(char byte) {
+    output[pos++] = byte; grow();
+}
+
+void outputW(unsigned long value, Format format) {
+    char width = WIDTHS[format];
+
+    outputB(value & 0x000000FF);
+    if (width >= 2) outputB((value & 0x0000FF00) >> 8);
+    if (width >= 3) outputB((value & 0x00FF0000) >> 16);
+    if (width >= 4) outputB((value & 0xFF000000) >> 24);
 }
 
 void createLabel(unsigned long globalIdHash, unsigned long localIdHash) {
@@ -63,17 +80,38 @@ void createReference(Token* token, unsigned long globalIdHash) {
     lastReference = reference;
 }
 
-void outputB(char byte) {
-    output[pos++] = byte; grow();
+void pushGroupLevel(Token* token) {
+    GroupLevel* groupLevel = malloc(sizeof(GroupLevel));
+
+    printf("Open group %c\n", token->value.asGroupType);
+    
+    groupLevel->pos = pos;
+    groupLevel->token = token;
+    groupLevel->prev = lastGroupLevel;
+    groupLevel->next = NULL;
+
+    if (!firstGroupLevel) firstGroupLevel = groupLevel;
+    if (lastGroupLevel) lastGroupLevel->next = groupLevel;
+
+    lastGroupLevel = groupLevel;
 }
 
-void outputW(unsigned long value, Format format) {
-    char width = WIDTHS[format];
+bool popGroupLevel(GroupLevel* groupLevel) {
+    if (!lastGroupLevel) {
+        return false;
+    }
 
-    outputB(value & 0x000000FF);
-    if (width >= 2) outputB((value & 0x0000FF00) >> 8);
-    if (width >= 3) outputB((value & 0x00FF0000) >> 16);
-    if (width >= 4) outputB((value & 0xFF000000) >> 24);
+    *groupLevel = *lastGroupLevel;
+
+    lastGroupLevel = lastGroupLevel->prev;
+
+    if (lastGroupLevel) {
+        lastGroupLevel->next = NULL;
+    } else {
+        firstGroupLevel = NULL;
+    }
+
+    return true;
 }
 
 Label* resolveLabel(unsigned long globalIdHash, unsigned long localIdHash) {
@@ -133,14 +171,53 @@ void resolveReferences() {
     }
 }
 
+void resolveGroupLevel() {
+    GroupLevel groupLevel;
+
+    if (!popGroupLevel(&groupLevel)) {
+        fprintf(stderr, "Mismatched group bracket");
+        return;
+    }
+
+    GroupType groupType = groupLevel.token->value.asGroupType;
+
+    if (groupType == GROUP_STD) {
+        return;
+    }
+
+    unsigned long oldPos = pos;
+
+    pos = groupLevel.pos + 1; // Offset by one byte due to `put` op
+
+    if (groupType == GROUP_COND) {
+        pos++; // Offset by another byte due to `not` op
+    }
+
+    printf("Resolve group close to address 0x%08x\n", pos);
+
+    if (groupType == GROUP_QUOTED) {
+        // Offset pos by 11 to skip over `put` + long + `put` + long + `jump`
+        outputW(groupLevel.pos + 11, FMT_LONG);
+        pos++; // Skip over second `put` op
+    }
+
+    outputW(oldPos, FMT_LONG);
+
+    pos = oldPos;
+}
+
 void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
     output = malloc(BLOCK_SIZE);
-    pos = 0;
+    pos = 0x400;
     length = 0;
     firstLabel = NULL;
     lastLabel = NULL;
     firstReference = NULL;
     lastReference = NULL;
+    firstGroupLevel = NULL;
+    lastGroupLevel = NULL;
+
+    grow();
 
     Token* token = firstToken;
     unsigned long currentGlobalHashId = 0;
@@ -165,6 +242,27 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
                     currentGlobalHashId = token->value.asIdHash;
                     createLabel(currentGlobalHashId, 0);
                 }
+                break;
+
+            case TOK_GROUP_OPEN:
+                pushGroupLevel(token);
+                if (token->value.asGroupType == GROUP_STD) break;
+                if (token->value.asGroupType == GROUP_COND) outputB(OP_NOT);
+                outputB(OP_PUT | FMT_LONG);
+                outputW(0, FMT_LONG);
+                if (token->value.asGroupType == GROUP_QUOTED) {
+                    outputB(OP_PUT | FMT_LONG);
+                    outputW(0, FMT_LONG);
+                }
+                outputB((token->value.asGroupType == GROUP_COND ? OP_IF : OP_JUMP) | FMT_LONG);
+                break;
+
+            case TOK_GROUP_CLOSE:
+                resolveGroupLevel();
+                break;
+
+            case TOK_POS_ABS:
+                pos = token->value.asInt; grow();
                 break;
 
             case TOK_CALL: case TOK_CALL_COND: case TOK_ADDR: case TOK_ADDR_EXT:

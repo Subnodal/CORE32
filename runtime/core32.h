@@ -8,6 +8,7 @@
 #define C32_FREE free
 
 #define C32_MEM_SIZE 0x10000
+#define C32_ENTRY_POINT 0x400
 #define C32_CSP_BASE 0x100
 #define C32_DSP_BASE 0x200
 

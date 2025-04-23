@@ -27,7 +27,8 @@ typedef enum {
 typedef enum {
     GROUP_STD = '.',
     GROUP_COND = '?',
-    GROUP_QUOTED = ':'
+    GROUP_QUOTED = ':',
+    GROUP_SKIPPED = '$'
 } GroupType;
 
 typedef enum {

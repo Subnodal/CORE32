@@ -5,9 +5,13 @@
 
 #define BLOCK_SIZE 512
 
+#define OP_DUP      0b00011000
+#define OP_NOT      0b01111000
 #define OP_PUT      0b11000000
+#define OP_JUMP     0b11001000
 #define OP_CALL     0b11010000
 #define OP_CIF      0b11110000
+#define OP_IF       0b11111000
 
 typedef struct Label {
     unsigned long globalIdHash;
@@ -22,6 +26,13 @@ typedef struct Reference {
     unsigned long globalIdHash;
     struct Reference* next;
 } Reference;
+
+typedef struct GroupLevel {
+    unsigned long pos;
+    Token* token;
+    struct GroupLevel* prev;
+    struct GroupLevel* next;
+} GroupLevel;
 
 void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr);
 

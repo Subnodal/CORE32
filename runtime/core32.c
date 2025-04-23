@@ -11,9 +11,9 @@ const c32_Byte C32_WIDTHS[4] = {1, 2, 4, 4};
 #define C32_BIT_OP(op) {c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, a op b); break;}
 #define C32_LOGIC_OP(op) {c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, C32_FMT_BYTE, a op b); break;}
 
-#define C32_FLOAT_OP(op) { \
+#define C32_FLOAT_OP(op, checkDivZero) { \
         if (C32_FMT(inst) == C32_FMT_FLOAT) { \
-            c32_Float b = c32_popFloat(vm, inst); c32_Float a = c32_popFloat(vm, inst); c32_pushFloat(vm, inst, a op b); \
+            c32_Float b = c32_popFloat(vm, inst); c32_Float a = c32_popFloat(vm, inst); c32_pushFloat(vm, inst, checkDivZero && b == 0 ? 0 : a op b); \
         } else { \
             c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, inst, a op b); \
         } \
@@ -23,7 +23,7 @@ const c32_Byte C32_WIDTHS[4] = {1, 2, 4, 4};
 CORE32* c32_new(c32_Byte* code, c32_Long codeLength) {
     CORE32* vm = C32_MALLOC(sizeof(CORE32));
 
-    vm->ip = 0x0;
+    vm->ip = C32_ENTRY_POINT;
     vm->csp = C32_CSP_BASE;
     vm->dsp = C32_DSP_BASE;
     vm->running = 1;
@@ -115,6 +115,8 @@ void c32_step(CORE32* vm) {
 
     c32_Byte inst = c32_read(vm, &vm->ip);
 
+    // printf("@%x OP: %x\n", vm->ip, inst & 0b11111000);
+
     switch (inst & 0b11111000) {
         case C32_OP_RET: {
             vm->ip = c32_popCall(vm);
@@ -127,7 +129,12 @@ void c32_step(CORE32* vm) {
             break;
         }
 
-        case C32_OP_MOD: C32_BIT_OP(%)
+        case C32_OP_MOD: {
+            c32_Long b = c32_pop(vm, inst);
+            c32_Long a = c32_pop(vm, inst);
+            c32_push(vm, inst, b == 0 ? 0 : a % b);
+            break;
+        }
 
         case C32_OP_DUP: {
             c32_Long a = c32_pop(vm, inst);
@@ -163,10 +170,10 @@ void c32_step(CORE32* vm) {
             break;
         }
 
-        case C32_OP_SUB: C32_FLOAT_OP(-)
-        case C32_OP_ADD: C32_FLOAT_OP(+)
-        case C32_OP_DIV: C32_FLOAT_OP(/)
-        case C32_OP_MUL: C32_FLOAT_OP(*)
+        case C32_OP_SUB: C32_FLOAT_OP(-, 0)
+        case C32_OP_ADD: C32_FLOAT_OP(+, 0)
+        case C32_OP_DIV: C32_FLOAT_OP(/, 1)
+        case C32_OP_MUL: C32_FLOAT_OP(*, 1)
 
         case C32_OP_OR: C32_BIT_OP(|)
         case C32_OP_XOR: C32_BIT_OP(^)

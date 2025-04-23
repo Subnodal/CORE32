@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "parser.h"
 #include "assembler.h"
@@ -44,16 +45,17 @@ int main(int argc, char* argv[]) {
 
     char* output;
     unsigned long length;
+    unsigned long offset = 0x400;
 
     assemble(firstToken, &output, &length);
 
-    if (argc < 3) {
+    if (argc < 4 || strcmp(argv[2], "-o") != 0) {
         fprintf(stderr, "No output file specified\n");
 
         return 1;
     }
 
-    fp = fopen(argv[2], "w");
+    fp = fopen(argv[3], "w");
 
     if (!fp) {
         fprintf(stderr, "Error when writing file\n");
@@ -61,7 +63,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    fwrite(output, 1, length, fp);
+    fwrite(output + offset, 1, length - offset, fp);
 
     return 0;
 }

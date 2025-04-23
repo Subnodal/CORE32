@@ -72,11 +72,11 @@ int main(int argc, char* argv[]) {
     fseek(fp, 0, SEEK_END);
 
     size_t size = ftell(fp);
-    char* data = malloc(size + 1);
+    char* data = calloc(size + C32_ENTRY_POINT + 1, 1);
 
     fseek(fp, 0, SEEK_SET);
 
-    if (fread(data, sizeof(char), size, fp) != size) {
+    if (fread(data + C32_ENTRY_POINT, sizeof(char), size, fp) != size) {
         fprintf(stderr, "Error reading file contents\n");
         fclose(fp);
 
@@ -85,9 +85,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    data[size] = '\0';
+    data[size + C32_ENTRY_POINT] = '\0';
 
-    vm = c32_new(data, size);
+    vm = c32_new(data, size + C32_ENTRY_POINT);
 
     while (vm->running) {
         c32_step(vm);
