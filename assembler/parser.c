@@ -16,7 +16,7 @@ char* opNames[] = {
     "ret",  "drop", "mod",  "dup",  "swap", "over", "from", "to",   // 00*
     "sub",  "add",  "div",  "mul",  "or",   "xor",  "and",  "not",  // 01*
     "neq",  "eq",   "gtn",  "bsr",  "dec",  "ltn",  "bsl",  "inc",  // 10*
-    "data", "jump", "call", "int",  "get",  "set",  "cif",  "if",   // 11*
+    "put",  "jump", "call", "int",  "get",  "set",  "cif",  "if",   // 11*
     NULL
 };
 
