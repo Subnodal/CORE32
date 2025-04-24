@@ -45,8 +45,8 @@
 #define C32_OP_CIF      0b11110000
 #define C32_OP_IF       0b11111000
 
-#define C32_REL_ABS     0b0
-#define C32_REL_REL     0b1
+#define C32_REL_ABS     0b000
+#define C32_REL_REL     0b100
 
 #define C32_FMT_BYTE    0b00
 #define C32_FMT_SHORT   0b01

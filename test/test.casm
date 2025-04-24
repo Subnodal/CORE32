@@ -3,6 +3,7 @@ start:
     test2
     test3
     test4
+    test5
     ret
 
 outputHexDigit:
@@ -10,7 +11,7 @@ outputHexDigit:
     '0' +' int' ret
 
     .letter:
-        'A' +' int' ret
+        'A' 10' -' +' int' ret
 
 outputHexByte:
     dup' 4' >>' outputHexDigit
@@ -71,3 +72,22 @@ test4: ( Groups )
     '\n' int'
 
     ret
+
+print:
+    .loop:
+        dup get'
+        dup' int'
+        0' =' $.end if
+        ++
+        $.loop jump
+
+    .end:
+        drop
+        ret
+
+testString: ["Test string!\n" 0]
+
+test5: ( Strings )
+    "Hello, world!\n" print
+    "This is a test!\n" print
+    $testString print

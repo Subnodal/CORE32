@@ -13,6 +13,9 @@
 #define OP_CIF      0b11110000
 #define OP_IF       0b11111000
 
+#define REL_ABS     0b000
+#define REL_REL     0b100
+
 typedef struct Label {
     unsigned long globalIdHash;
     unsigned long localIdHash;

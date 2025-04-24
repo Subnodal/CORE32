@@ -14,11 +14,13 @@
                 add' add" add%
                 +' +" +%
 
+(text)          'A' '\n' "Hello"
+
 (labels)        test: hello ?hello $hello
                 .local: .hello ?.hello $.hello
                 $test.local
 
-(raw values)    [123 0b101010 0xF0"]
+(raw values)    [123 0b101010 0xF0" 'A' '\n' "Hello"]
 
 (groups)        {0x1234 get} ?{0x1234 get} :{0x1234 get} ${0x1234 get}
 

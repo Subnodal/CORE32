@@ -29,6 +29,23 @@ char* opSymbols[] = {
     NULL
 };
 
+char getEscapeChar(char c) {
+    switch (c) {
+        case 'a': return '\a';
+        case 'b': return '\b';
+        case 'e': return '\e';
+        case 'f': return '\f';
+        case 'n': return '\n';
+        case 'r': return '\r';
+        case 't': return '\t';
+        case 'v': return '\v';
+        case '\\': return '\\';
+        case '\'': return '\'';
+        case '"': return '"';
+        default: return '\0';
+    }
+}
+
 bool matchChars(char** codePtr, char* match, bool whole) {
     unsigned int i = 0;
 
@@ -139,6 +156,44 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
     return true;
 }
 
+bool matchString(char** codePtr, char** resultPtr) {
+    unsigned int i = 0;
+    unsigned char* code = *codePtr;
+
+    if (code[i++] != '"') {
+        return false;
+    }
+
+    char* result = malloc(1);
+    unsigned int resultLength = 0;
+
+    while (code[i] != '"') {
+        if (code[i] == '\0') {
+            free(result);
+
+            return false;
+        }
+
+        char c = code[i++];
+
+        if (c == '\\') {
+            c = getEscapeChar(code[i++]);
+        }
+
+        result = realloc(result, resultLength + 1);
+        result[resultLength++] = c;
+    }
+
+    i++; // To match string's closing quote
+
+    result[resultLength] = '\0';
+
+    *codePtr += i;
+    *resultPtr = result;
+
+    return true;
+}
+
 Format getFormatSuffix(char** code) {
     if ((*code)[0] == '\'') {
         (*code)++;
@@ -184,27 +239,13 @@ Token* parse(char* code) {
             continue;
         }
 
-
         if (code[0] == '\'') {
             char c = code[1];
 
             code += 2;
 
             if (c =='\\') {
-                switch (code[0]) {
-                    case 'a': c = '\a'; break;
-                    case 'b': c = '\b'; break;
-                    case 'e': c = '\e'; break;
-                    case 'f': c = '\f'; break;
-                    case 'n': c = '\n'; break;
-                    case 'r': c = '\r'; break;
-                    case 't': c = '\t'; break;
-                    case 'v': c = '\v'; break;
-                    case '\\': c = '\\'; break;
-                    case '\'': c = '\''; break;
-                    case '"': c = '"'; break;
-                    default: break;
-                }
+                c = getEscapeChar(code[0]);
 
                 code++;
             }
@@ -218,6 +259,19 @@ Token* parse(char* code) {
             tokenToAdd.type = TOK_INT;
             tokenToAdd.value.asInt = c;
             tokenToAdd.format = FMT_BYTE;
+
+            goto addToken;
+        }
+
+        if (code[0] == '"') {
+            char* result;
+
+            if (!matchString(&code, &result)) {
+                goto error;
+            }
+
+            tokenToAdd.type = TOK_STRING;
+            tokenToAdd.value.asString = result;
 
             goto addToken;
         }
@@ -412,6 +466,10 @@ void inspect(Token* token) {
 
         case TOK_INT:
             printf("int(%d%s) ", token->value.asInt, inspectFormat(token));
+            break;
+
+        case TOK_STRING:
+            printf("string(%s) ", token->value.asString);
             break;
 
         case TOK_DEFINE:

@@ -50,6 +50,24 @@ void outputW(unsigned long value, Format format) {
     if (width >= 4) outputB((value & 0xFF000000) >> 24);
 }
 
+Format getShortestFormat(unsigned long value) {
+    Format format = FMT_LONG;
+
+    if (value <= 0xFFFF) format = FMT_SHORT;
+    if (value <= 0xFF) format = FMT_BYTE;
+
+    return format;
+}
+
+char getFormatLength(Format format) {
+    switch (format) {
+        case FMT_BYTE: return 1;
+        case FMT_SHORT: return 2;
+        case FMT_LONG: case FMT_FLOAT: return 4;
+        default: return 0;
+    }
+}
+
 void createLabel(unsigned long globalIdHash, unsigned long localIdHash) {
     Label* label = malloc(sizeof(Label));
 
@@ -236,6 +254,24 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
                 if (rawLevel == 0) outputB(OP_PUT | token->format);
                 outputW(token->value.asInt, token->format);
                 break;
+
+            case TOK_STRING: {
+                unsigned int length = 0;
+                for (; token->value.asString[length]; length++);
+                if (rawLevel == 0) {
+                    Format format = getShortestFormat(length + 1);
+                    outputB(OP_PUT | FMT_LONG);
+                    outputW(pos + 6 + getFormatLength(format), FMT_LONG);
+                    outputB(OP_PUT | format);
+                    outputW(length + 2, format);
+                    outputB(OP_JUMP | format | REL_REL);
+                }
+                for (unsigned int i = 0; token->value.asString[i]; i++) {
+                    outputB(token->value.asString[i]);
+                }
+                if (rawLevel == 0) outputB('\0');
+                break;
+            }
 
             case TOK_DEFINE:
                 if (token->format == FMT_LOCAL) createLabel(currentGlobalHashId, token->value.asIdHash);

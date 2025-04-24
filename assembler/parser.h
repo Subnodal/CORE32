@@ -7,6 +7,7 @@ typedef enum {
     TOK_ERROR,
     TOK_OP,
     TOK_INT,
+    TOK_STRING,
     TOK_DEFINE,
     TOK_CALL,
     TOK_CALL_COND,
@@ -44,6 +45,7 @@ typedef struct Token {
     TokenType type;
     union {
         unsigned long asInt;
+        char* asString;
         unsigned char asOpcode;
         unsigned long asIdHash;
         GroupType asGroupType;
