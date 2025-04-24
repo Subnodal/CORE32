@@ -221,6 +221,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
 
     Token* token = firstToken;
     unsigned long currentGlobalHashId = 0;
+    unsigned int rawLevel = 0;
 
     while (token) {
         switch (token->type) {
@@ -232,7 +233,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
                 break;
 
             case TOK_INT:
-                outputB(OP_PUT | token->format);
+                if (rawLevel == 0) outputB(OP_PUT | token->format);
                 outputW(token->value.asInt, token->format);
                 break;
 
@@ -261,16 +262,28 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
                 resolveGroupLevel();
                 break;
 
-            case TOK_POS_ABS:
-                pos = token->value.asInt; grow();
-                break;
-
             case TOK_CALL: case TOK_CALL_COND: case TOK_ADDR: case TOK_ADDR_EXT:
-                outputB(OP_PUT | FMT_LONG);
+                if (rawLevel == 0) outputB(OP_PUT | FMT_LONG);
                 createReference(token, currentGlobalHashId);
                 outputW(0, FMT_LONG);
-                if (token->type == TOK_CALL) outputB(OP_CALL | FMT_LONG);
-                if (token->type == TOK_CALL_COND) outputB(OP_CIF | FMT_LONG);
+                if (rawLevel == 0 && token->type == TOK_CALL) outputB(OP_CALL | FMT_LONG);
+                if (rawLevel == 0 && token->type == TOK_CALL_COND) outputB(OP_CIF | FMT_LONG);
+                break;
+
+            case TOK_RAW_OPEN:
+                rawLevel++;
+                break;
+
+            case TOK_RAW_CLOSE:
+                if (rawLevel == 0) {
+                    fprintf(stderr, "Mismatched raw bracket\n");
+                    break;
+                }
+                rawLevel--;
+                break;
+
+            case TOK_POS_ABS:
+                pos = token->value.asInt; grow();
                 break;
 
             case TOK_POS_OFFSET:

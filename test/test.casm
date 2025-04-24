@@ -45,10 +45,7 @@ test2: ( Outputting hex )
     ret
 
 test3: ( Fibonacci sequence )
-    ${.a: ~4 .b: ~4}
-
-    0 $.a set
-    1 $.b set
+    ${.a: [0] .b: [1]}
 
     10
 
