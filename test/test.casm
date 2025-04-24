@@ -76,8 +76,8 @@ test4: ( Groups )
 print:
     .loop:
         dup get'
-        dup' int'
-        0' =' $.end if
+        dup' 0' =' $.end if
+        int'
         ++
         $.loop jump
 
