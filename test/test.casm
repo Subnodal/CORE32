@@ -7,10 +7,10 @@ start:
 
 outputHexDigit:
     dup' 9' >' $.letter if
-    0x30' +' int' ret
+    '0' +' int' ret
 
     .letter:
-        0x37' +' int' ret
+        'A' +' int' ret
 
 outputHexByte:
     dup' 4' >>' outputHexDigit
@@ -22,26 +22,26 @@ outputHexLong:
     outputHexByte
     outputHexByte
     outputHexByte
-    0x0A' int'
+    '\n' int'
     ret
 
 test1: ( Simple count-controlled loop )
-    0x41' int' ( Print A )
+    'A' int' ( Print A )
 
     10 ( Loop 10 times )
 
     .loop:
-        0x42' int' ( Print B )
+        'B' int' ( Print B )
         -- ( Decrement loop counter )
         dup 0 > $.loop if ( Loop if not zero )
 
-    0x0A' int' ( Print newline )
+    '\n' int' ( Print newline )
 
     ret
 
 test2: ( Outputting hex )
     0xA1B2C3D4 outputHexLong
-    0x0A' int'
+    '\n' int'
     ret
 
 test3: ( Fibonacci sequence )
@@ -61,13 +61,13 @@ test3: ( Fibonacci sequence )
     ret
 
 test4: ( Groups )
-    {0x41' int'}
-    {0' ?{0x42' int'}}
-    {1' ?{0x43' int'}}
+    {'A' int'}
+    {0' ?{'B' int'}}
+    {1' ?{'C' int'}}
     :{0x44' int' ret}
     ${0x45' int'}
     call
 
-    0x0A' int'
+    '\n' int'
 
     ret

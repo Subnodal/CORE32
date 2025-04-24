@@ -184,6 +184,44 @@ Token* parse(char* code) {
             continue;
         }
 
+
+        if (code[0] == '\'') {
+            char c = code[1];
+
+            code += 2;
+
+            if (c =='\\') {
+                switch (code[0]) {
+                    case 'a': c = '\a'; break;
+                    case 'b': c = '\b'; break;
+                    case 'e': c = '\e'; break;
+                    case 'f': c = '\f'; break;
+                    case 'n': c = '\n'; break;
+                    case 'r': c = '\r'; break;
+                    case 't': c = '\t'; break;
+                    case 'v': c = '\v'; break;
+                    case '\\': c = '\\'; break;
+                    case '\'': c = '\''; break;
+                    case '"': c = '"'; break;
+                    default: break;
+                }
+
+                code++;
+            }
+
+            if (code[0] != '\'') {
+                goto error;
+            }
+
+            code++;
+
+            tokenToAdd.type = TOK_INT;
+            tokenToAdd.value.asInt = c;
+            tokenToAdd.format = FMT_BYTE;
+
+            goto addToken;
+        }
+
         if (code[0] == '[' || code[0] == ']') {
             tokenToAdd.type = code[0] == ']' ? TOK_RAW_CLOSE : TOK_RAW_OPEN;
             code++;
