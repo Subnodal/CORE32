@@ -148,6 +148,12 @@ Label* resolveLabel(unsigned long globalIdHash, unsigned long localIdHash) {
     return NULL;
 }
 
+void setLabelSize(unsigned long globalIdHash, unsigned long localIdHash, unsigned long size) {
+    Label* label = resolveLabel(globalIdHash, localIdHash);
+
+    if (label) label->size = size;
+}
+
 void resolveReferences() {
     Reference* reference = firstReference;
 
@@ -164,11 +170,22 @@ void resolveReferences() {
                     resolveLabel(token->value.asIdHash, 0)
                 );
 
-                if (label) outputW(label->pos, FMT_LONG);
+                if (!label) goto undefinedReference;
+
+                outputW(label->pos, FMT_LONG);
                 break;
             }
 
-            case TOK_ADDR_EXT: {
+            case TOK_LOCAL_OFFSET: {
+                Label* label = resolveLabel(reference->globalIdHash, token->value.asIdHash);
+                Label* globalLabel = resolveLabel(reference->globalIdHash, 0);
+
+                if (!label || !globalLabel) goto undefinedReference;
+
+                outputW(label->pos - globalLabel->pos, FMT_LONG);
+            }
+
+            case TOK_ADDR_EXT: case TOK_LOCAL_OFFSET_EXT: {
                 if (!token->next || token->next->type != TOK_CALL) {
                     fprintf(stderr, "Invalid subsequent token\n");
                     break;
@@ -176,12 +193,50 @@ void resolveReferences() {
 
                 Label* label = resolveLabel(token->value.asIdHash, token->next->value.asIdHash);
 
-                if (label) outputW(label->pos, FMT_LONG);
+                if (!label) goto undefinedReference;
+
+                unsigned long resolvedPos = label->pos;
+
+                if (token->type == TOK_LOCAL_OFFSET_EXT) {
+                    Label* globalLabel = resolveLabel(token->value.asIdHash, 0);
+
+                    if (!globalLabel) goto undefinedReference;
+
+                    resolvedPos -= globalLabel->pos;
+                }
+
+                outputW(resolvedPos, FMT_LONG);
+                break;
+            }
+
+            case TOK_SIZE_OF: case TOK_SIZE_OF_EXT: {
+                Label* label = NULL;
+
+                if (token->format == FMT_LOCAL) {
+                    label = resolveLabel(reference->globalIdHash, token->value.asIdHash);
+                } else if (token->type == TOK_SIZE_OF_EXT) {
+                    if (!token->next || token->next->type != TOK_CALL) {
+                        fprintf(stderr, "Invalid subsequent token\n");
+                        break;
+                    }
+
+                    label = resolveLabel(token->value.asIdHash, token->next->value.asIdHash);
+                } else {
+                    label = resolveLabel(token->value.asIdHash, 0);
+                }
+
+                if (!label) goto undefinedReference;
+
+                outputW(label->size, FMT_LONG);
                 break;
             }
 
             default:
                 fprintf(stderr, "Reference type not implemented\n");
+                break;
+
+            undefinedReference:
+                fprintf(stderr, "Undefined reference\n");
                 break;
         }
 
@@ -239,9 +294,14 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
 
     Token* token = firstToken;
     unsigned long currentGlobalHashId = 0;
+    unsigned long currentLocalHashId = 0;
+    unsigned long currentGlobalStartPos = 0;
+    unsigned long currentLocalStartPos = 0;
     unsigned int rawLevel = 0;
 
     while (token) {
+        bool skipNextToken = false;
+    
         switch (token->type) {
             case TOK_ERROR:
                 break;
@@ -274,9 +334,16 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
             }
 
             case TOK_DEFINE:
-                if (token->format == FMT_LOCAL) createLabel(currentGlobalHashId, token->value.asIdHash);
-                else {
+                if (token->format == FMT_LOCAL) {
+                    setLabelSize(currentGlobalHashId, currentLocalHashId, pos - currentLocalStartPos);
+                    currentLocalHashId = token->value.asIdHash;
+                    currentLocalStartPos = pos;
+                    createLabel(currentGlobalHashId, currentLocalHashId);
+                } else {
+                    if (currentGlobalHashId) setLabelSize(currentGlobalHashId, 0, pos - currentGlobalStartPos);
+                    if (currentLocalHashId) setLabelSize(currentGlobalHashId, currentLocalHashId, pos - currentLocalStartPos);
                     currentGlobalHashId = token->value.asIdHash;
+                    currentGlobalStartPos = pos;
                     createLabel(currentGlobalHashId, 0);
                 }
                 break;
@@ -299,11 +366,18 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
                 break;
 
             case TOK_CALL: case TOK_CALL_COND: case TOK_ADDR: case TOK_ADDR_EXT:
+            case TOK_LOCAL_OFFSET: case TOK_LOCAL_OFFSET_EXT:
+            case TOK_SIZE_OF: case TOK_SIZE_OF_EXT:
                 if (rawLevel == 0) outputB(OP_PUT | FMT_LONG);
                 createReference(token, currentGlobalHashId);
                 outputW(0, FMT_LONG);
                 if (rawLevel == 0 && token->type == TOK_CALL) outputB(OP_CALL | FMT_LONG);
                 if (rawLevel == 0 && token->type == TOK_CALL_COND) outputB(OP_CIF | FMT_LONG);
+                if (
+                    token->type == TOK_ADDR_EXT ||
+                    token->type == TOK_LOCAL_OFFSET_EXT ||
+                    token->type == TOK_SIZE_OF_EXT
+                ) skipNextToken = true;
                 break;
 
             case TOK_RAW_OPEN:
@@ -332,7 +406,14 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
         }
 
         token = token->next;
+
+        if (skipNextToken && token) {
+            token = token->next;
+        }
     }
+
+    setLabelSize(currentGlobalHashId, 0, pos - currentGlobalStartPos);
+    setLabelSize(currentGlobalHashId, currentLocalHashId, pos - currentLocalStartPos);
 
     resolveReferences();
 

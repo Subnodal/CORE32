@@ -21,6 +21,8 @@ typedef enum {
     TOK_POS_OFFSET,
     TOK_LOCAL_OFFSET,
     TOK_LOCAL_OFFSET_EXT,
+    TOK_SIZE_OF,
+    TOK_SIZE_OF_EXT,
     TOK_MACRO,
     TOK_MACRO_DEFINE
 } TokenType;

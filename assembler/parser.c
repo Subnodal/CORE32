@@ -222,6 +222,7 @@ Token* parse(char* code) {
     unsigned int intResult = 0;
     unsigned long hashResult = 0;
     Format resultFormat = FMT_BYTE;
+    bool expectSizeOfLocalNext = false;
 
     while (code[0]) {
         TokenType numberTokenType = TOK_INT;
@@ -325,9 +326,14 @@ Token* parse(char* code) {
             tokenToAdd.value.asIdHash = hashResult;
             tokenToAdd.format = FMT_GLOBAL;
 
-            if (code[0] == ':') {
-                tokenToAdd.type = TOK_DEFINE;
+            if (code[0] == ':' || code[0] == '~') {
+                tokenToAdd.type = code[0] == ':' ? TOK_DEFINE : TOK_SIZE_OF;
                 code++;
+            }
+
+            if (code[0] == '.') {
+                tokenToAdd.type = TOK_SIZE_OF_EXT;
+                expectSizeOfLocalNext = true;
             }
 
             goto addToken;
@@ -352,6 +358,13 @@ Token* parse(char* code) {
             tokenToAdd.value.asIdHash = hashResult;
             tokenToAdd.format = local ? FMT_LOCAL : FMT_GLOBAL;
 
+            if (expectSizeOfLocalNext) {
+                if (code[0] != '~') goto error;
+                expectSizeOfLocalNext = false;
+                code++;
+                goto addToken;
+            }
+
             if (prefix == '.' && code[0] == ':') {
                 tokenToAdd.type = TOK_DEFINE;
                 code++;
@@ -359,6 +372,9 @@ Token* parse(char* code) {
                 tokenToAdd.type = TOK_CALL_COND;
             } else if (prefix == '$') {
                 tokenToAdd.type = code[0] == '.' ? TOK_ADDR_EXT : TOK_ADDR;
+            } else if (code[0] == '~') {
+                tokenToAdd.type = TOK_SIZE_OF;
+                code++;
             }
 
             goto addToken;
@@ -514,6 +530,14 @@ void inspect(Token* token) {
 
         case TOK_POS_OFFSET:
             printf("posoffset(%ld%s) ", token->value.asInt, inspectFormat(token));
+            break;
+
+        case TOK_SIZE_OF:
+            printf("sizeof(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asInt);
+            break;
+
+        case TOK_SIZE_OF_EXT:
+            printf("sizeofext(%ld) ", token->value.asInt);
             break;
 
         case TOK_LOCAL_OFFSET:

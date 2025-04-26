@@ -4,6 +4,7 @@ start:
     test3
     test4
     test5
+    test6
     ret
 
 outputHexDigit:
@@ -91,3 +92,18 @@ test5: ( Strings )
     "Hello, world!\n" print
     "This is a test!\n" print
     $testString print
+
+    ret
+
+Person:
+    .age: [0]
+    .test: [0]
+    .team: ['x']
+
+test6: ( Objects )
+    Person~ outputHexLong
+    Person.age~ outputHexLong
+    Person.test~ outputHexLong
+    Person.team~ outputHexLong
+
+    ret

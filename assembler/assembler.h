@@ -20,6 +20,7 @@ typedef struct Label {
     unsigned long globalIdHash;
     unsigned long localIdHash;
     unsigned long pos;
+    unsigned long size;
     struct Label* next;
 } Label;
 
