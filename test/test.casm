@@ -138,7 +138,7 @@ printPerson: ( $person -- )
     ret
 
 test6: ( Objects )
-    ${.alice: ~Person [0] .bob: ~Person [0]}
+    ${.alice: ~Person .bob: ~Person}
 
     Person~ outputHexLong
     Person.name~ outputHexLong
