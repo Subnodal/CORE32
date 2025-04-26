@@ -416,8 +416,19 @@ Token* parse(char* code) {
             numberTokenType = TOK_POS_ABS;
             code++;
         } else if (code[0] == '~') {
+            bool local = code[1] == '.';
+
+            code += local ? 2 : 1;
+
+            if (matchIdentifier(&code, &hashResult)) {
+                tokenToAdd.type = code[0] == '.' ? TOK_SIZE_OF_OFFSET_EXT : TOK_SIZE_OF_OFFSET;
+                tokenToAdd.value.asIdHash = hashResult;
+                tokenToAdd.format = local ? FMT_LOCAL : FMT_GLOBAL;
+
+                goto addToken;
+            }
+
             numberTokenType = TOK_POS_OFFSET;
-            code++;
         }
 
         MATCH_BASE("0b", 2);

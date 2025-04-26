@@ -4,6 +4,8 @@
 
 const c32_Byte C32_WIDTHS[4] = {1, 2, 4, 4};
 
+// #define C32_TRACE
+
 #define C32_FMT(inst) (inst & 0b11)
 #define C32_REL(inst) (inst & 0b100)
 #define C32_OFFSET(inst, addr) (addr + (C32_REL(inst) ? vm->ip - 1 : 0))
@@ -123,7 +125,14 @@ void c32_step(CORE32* vm) {
 
     c32_Byte inst = c32_read(vm, &vm->ip);
 
-    // printf("@%x OP: %x\n", vm->ip, inst & 0b11111000);
+    #ifdef C32_TRACE
+        printf("@%08x OP: %02x [", vm->ip, inst & 0b11111000);
+        for (unsigned int i = C32_DSP_BASE; i < C32_DSP_BASE + 32; i++) {
+            if (vm->dsp > i) printf("%02x", vm->mem[i]);
+            else printf("..");
+        }
+        printf("]\n");
+    #endif
 
     switch (inst & 0b11111000) {
         case C32_OP_RET: {

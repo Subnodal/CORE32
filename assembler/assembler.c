@@ -31,7 +31,7 @@ void grow() {
 
         output = realloc(output, baseLength + BLOCK_SIZE);
 
-        for (unsigned int i = oldLength; i < baseLength + BLOCK_SIZE; i++) {
+        for (unsigned int i = oldLength + 1; i < baseLength + BLOCK_SIZE; i++) {
             output[i] = '\0';
         }
     }
@@ -399,6 +399,32 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
             case TOK_POS_OFFSET:
                 pos += token->value.asInt; grow();
                 break;
+
+            case TOK_SIZE_OF_OFFSET: case TOK_SIZE_OF_OFFSET_EXT: {
+                Label* label = NULL;
+
+                if (token->format == FMT_LOCAL) {
+                    label = resolveLabel(currentGlobalHashId, token->value.asIdHash);
+                } else if (token->type == TOK_SIZE_OF_EXT) {
+                    if (!token->next || token->next->type != TOK_CALL) {
+                        fprintf(stderr, "Invalid subsequent token\n");
+                        break;
+                    }
+
+                    label = resolveLabel(token->value.asIdHash, token->next->value.asIdHash);
+                    skipNextToken = true;
+                } else {
+                    label = resolveLabel(token->value.asIdHash, 0);
+                }
+
+                if (!label) {
+                    fprintf(stderr, "Undefined reference (note: future references not allowed)\n");
+                    break;
+                }
+
+                pos += label->size; grow();
+                break;
+            }
 
             default:
                 fprintf(stderr, "Token type not implemented\n");
