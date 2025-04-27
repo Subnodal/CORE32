@@ -16,9 +16,9 @@
 
 (text)          'A' '\n' "Hello"
 
-(labels)        test: hello ?hello $hello
-                .local: .hello ?.hello $.hello
-                $test.local
+(labels)        test: hello ?hello $hello hello~
+                .local: .hello ?.hello $.hello .hello~
+                $test.local test.local~
 
 (raw values)    [123 0b101010 0xF0" 'A' '\n' "Hello"]
 
@@ -26,6 +26,7 @@
 
 (positions)     @123 @0xF0
                 ~123 ~0xF0
+                ~hello ~.hello ~test.local
 
 (offsets)       #.local #test.local
 
