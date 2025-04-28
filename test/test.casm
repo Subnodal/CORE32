@@ -133,7 +133,7 @@ printPerson: ( $person -- )
     " is " print
     dup #Person.age + get outputDecPart
     " years old and is on team " print
-    #Person.team + get int'
+    #Person.team + get' int'
     '\n' int'
     ret
 
@@ -147,11 +147,11 @@ test6: ( Objects )
 
     "Alice" $.alice #Person.name + set
     20 $.alice #Person.age + set
-    'X' $.alice #Person.team + set
+    'X' $.alice #Person.team + set'
 
     "Bob" $.bob #Person.name + set
     42 $.bob #Person.age + set
-    'O' $.bob #Person.team + set
+    'O' $.bob #Person.team + set'
 
     $.alice printPerson
     $.bob printPerson
