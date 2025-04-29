@@ -5,6 +5,7 @@ start:
     test4
     test5
     test6
+    test7
     ret
 
 outputHexDigit: ( nibble' -- )
@@ -157,3 +158,14 @@ test6: ( Objects )
     $.bob printPerson
 
     ret
+
+#MACRO_A: 0x1234
+#MACRO_B: 0x5678
+#MACRO_C: {2 * outputDec}
+
+test7: ( Macros )
+    #MACRO_A outputHexLong
+    #MACRO_B outputHexLong
+
+    5 #MACRO_C
+    10 #MACRO_C

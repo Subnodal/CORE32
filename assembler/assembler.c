@@ -14,6 +14,11 @@ Reference* firstReference;
 Reference* lastReference;
 GroupLevel* firstGroupLevel;
 GroupLevel* lastGroupLevel;
+Macro* firstMacro;
+Macro* lastMacro;
+MacroLevel* firstMacroLevel;
+MacroLevel* lastMacroLevel;
+unsigned int macroLevelCount;
 
 void grow() {
     unsigned long oldLength = length;
@@ -127,6 +132,53 @@ bool popGroupLevel(GroupLevel* groupLevel) {
         lastGroupLevel->next = NULL;
     } else {
         firstGroupLevel = NULL;
+    }
+
+    return true;
+}
+
+void createMacro(unsigned long idHash, Token* firstToken) {
+    Macro* macro = malloc(sizeof(Macro));
+
+    macro->idHash = idHash;
+    macro->firstToken = firstToken;
+    macro->next = NULL;
+
+    if (!firstMacro) firstMacro = macro;
+    if (lastMacro) lastMacro->next = macro;
+
+    lastMacro = macro;
+}
+
+void pushMacroLevel(Token* continueToken) {
+    MacroLevel* macroLevel = malloc(sizeof(MacroLevel));
+    
+    macroLevel->continueToken = continueToken;
+    macroLevel->baseGroupLevel = lastGroupLevel;
+    macroLevel->prev = lastMacroLevel;
+    macroLevel->next = NULL;
+
+    if (!firstMacroLevel) firstMacroLevel = macroLevel;
+    if (lastMacroLevel) lastMacroLevel->next = macroLevel;
+
+    lastMacroLevel = macroLevel;
+    macroLevelCount++;
+}
+
+bool popMacroLevel(MacroLevel* macroLevel) {
+    if (!lastMacroLevel) {
+        return false;
+    }
+
+    *macroLevel = *lastMacroLevel;
+
+    lastMacroLevel = lastMacroLevel->prev;
+    macroLevelCount--;
+
+    if (lastMacroLevel) {
+        lastMacroLevel->next = NULL;
+    } else {
+        firstMacroLevel = NULL;
     }
 
     return true;
@@ -248,7 +300,7 @@ void resolveGroupLevel() {
     GroupLevel groupLevel;
 
     if (!popGroupLevel(&groupLevel)) {
-        fprintf(stderr, "Mismatched group bracket");
+        fprintf(stderr, "Mismatched group bracket\n");
         return;
     }
 
@@ -279,6 +331,18 @@ void resolveGroupLevel() {
     pos = oldPos;
 }
 
+Macro* reoslveMacro(unsigned long idHash) {
+    Macro* macro = firstMacro;
+
+    while (macro) {
+        if (macro->idHash == idHash) return macro;
+
+        macro = macro->next;
+    }
+
+    return NULL;
+}
+
 void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
     output = malloc(BLOCK_SIZE);
     pos = 0x400;
@@ -289,6 +353,11 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
     lastReference = NULL;
     firstGroupLevel = NULL;
     lastGroupLevel = NULL;
+    firstMacro = NULL;
+    lastMacro = NULL;
+    firstMacroLevel = NULL;
+    lastMacroLevel = NULL;
+    macroLevelCount = 0;
 
     grow();
 
@@ -298,9 +367,11 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
     unsigned long currentGlobalStartPos = 0;
     unsigned long currentLocalStartPos = 0;
     unsigned int rawLevel = 0;
+    MacroLevel macroLevel;
 
     while (token) {
         bool skipNextToken = false;
+        bool skipMacroExit = false;
     
         switch (token->type) {
             case TOK_ERROR:
@@ -348,23 +419,6 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
                 }
                 break;
 
-            case TOK_GROUP_OPEN:
-                pushGroupLevel(token);
-                if (token->value.asGroupType == GROUP_STD) break;
-                if (token->value.asGroupType == GROUP_COND) outputB(OP_NOT);
-                outputB(OP_PUT | FMT_LONG);
-                outputW(0, FMT_LONG);
-                if (token->value.asGroupType == GROUP_QUOTED) {
-                    outputB(OP_PUT | FMT_LONG);
-                    outputW(0, FMT_LONG);
-                }
-                outputB((token->value.asGroupType == GROUP_COND ? OP_IF : OP_JUMP) | FMT_LONG);
-                break;
-
-            case TOK_GROUP_CLOSE:
-                resolveGroupLevel();
-                break;
-
             case TOK_CALL: case TOK_CALL_COND: case TOK_ADDR: case TOK_ADDR_EXT:
             case TOK_LOCAL_OFFSET: case TOK_LOCAL_OFFSET_EXT:
             case TOK_SIZE_OF: case TOK_SIZE_OF_EXT:
@@ -390,6 +444,23 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
                     break;
                 }
                 rawLevel--;
+                break;
+
+            case TOK_GROUP_OPEN:
+                pushGroupLevel(token);
+                if (token->value.asGroupType == GROUP_STD) break;
+                if (token->value.asGroupType == GROUP_COND) outputB(OP_NOT);
+                outputB(OP_PUT | FMT_LONG);
+                outputW(0, FMT_LONG);
+                if (token->value.asGroupType == GROUP_QUOTED) {
+                    outputB(OP_PUT | FMT_LONG);
+                    outputW(0, FMT_LONG);
+                }
+                outputB((token->value.asGroupType == GROUP_COND ? OP_IF : OP_JUMP) | FMT_LONG);
+                break;
+
+            case TOK_GROUP_CLOSE:
+                resolveGroupLevel();
                 break;
 
             case TOK_POS_ABS:
@@ -426,15 +497,62 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
                 break;
             }
 
+            case TOK_MACRO: {
+                Macro* macro = reoslveMacro(token->value.asIdHash);
+
+                if (!macro) {
+                    fprintf(stderr, "Undefined macro\n");
+                    break;
+                }
+
+                if (macroLevelCount >= MAX_MACRO_DEPTH - 1) {
+                    fprintf(stderr, "Maximum macro depth limit reached\n");
+                    break;
+                }
+
+                pushMacroLevel(token->next);
+
+                token = macro->firstToken;
+                skipMacroExit = true;
+                break;
+            }
+
+            case TOK_MACRO_DEFINE: {
+                unsigned int groupLevel = 0;
+
+                createMacro(token->value.asIdHash, token);
+
+                token = token->next;
+
+                while (token) {
+                    if (token->type == TOK_GROUP_OPEN) groupLevel++;
+                    if (token->type == TOK_GROUP_CLOSE && groupLevel > 0) groupLevel--;
+
+                    if (groupLevel == 0) {
+                        break;
+                    }
+
+                    token = token->next;
+                }
+
+                break;
+            }
+
             default:
                 fprintf(stderr, "Token type not implemented\n");
                 break;
         }
 
-        token = token->next;
+        if (token) {
+            token = token->next;
+        }
 
         if (skipNextToken && token) {
             token = token->next;
+        }
+
+        if (!skipMacroExit && lastMacroLevel && lastMacroLevel->baseGroupLevel == lastGroupLevel && popMacroLevel(&macroLevel)) {
+            token = macroLevel.continueToken;
         }
     }
 

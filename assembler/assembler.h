@@ -16,6 +16,8 @@
 #define REL_ABS     0b000
 #define REL_REL     0b100
 
+#define MAX_MACRO_DEPTH 16
+
 typedef struct Label {
     unsigned long globalIdHash;
     unsigned long localIdHash;
@@ -37,6 +39,19 @@ typedef struct GroupLevel {
     struct GroupLevel* prev;
     struct GroupLevel* next;
 } GroupLevel;
+
+typedef struct Macro {
+    unsigned long idHash;
+    Token* firstToken;
+    struct Macro* next;
+} Macro;
+
+typedef struct MacroLevel {
+    Token* continueToken;
+    GroupLevel* baseGroupLevel;
+    struct MacroLevel* prev;
+    struct MacroLevel* next;
+} MacroLevel;
 
 void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr);
 
