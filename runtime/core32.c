@@ -38,6 +38,8 @@ CORE32* c32_new(c32_Byte* code, c32_Long codeLength) {
     vm->dsp = C32_DSP_BASE;
     vm->running = 1;
     vm->mem = C32_MALLOC(C32_MEM_SIZE);
+    vm->firstHandler = 0;
+    vm->lastHandler = 0;
 
     for (c32_Long i = 0; i < C32_MEM_SIZE; i++) {
         vm->mem[i] = 0;
@@ -48,6 +50,19 @@ CORE32* c32_new(c32_Byte* code, c32_Long codeLength) {
     }
 
     return vm;
+}
+
+void c32_registerHandler(CORE32* vm, c32_Long id, void (*callback)(CORE32* vm)) {
+    c32_InterruptHandler* handler = C32_MALLOC(sizeof(c32_InterruptHandler));
+
+    handler->id = id;
+    handler->callback = callback;
+    handler->next = 0;
+
+    if (!vm->firstHandler) vm->firstHandler = handler;
+    if (vm->lastHandler) vm->lastHandler->next = handler;
+
+    vm->lastHandler = handler;
 }
 
 c32_Byte c32_read(CORE32* vm, c32_Long* p) {
@@ -232,7 +247,13 @@ void c32_step(CORE32* vm) {
         }
 
         case C32_OP_INT: {
-            printf("%c", c32_pop(vm, inst));
+            c32_Long id = c32_pop(vm, inst);
+            for (c32_InterruptHandler* handler = vm->firstHandler; handler; handler = handler->next) {
+                if (handler->id == id) {
+                    handler->callback(vm);
+                    break;
+                }
+            }
             break;
         }
 

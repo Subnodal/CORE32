@@ -69,9 +69,22 @@ typedef struct CORE32 {
     c32_Long dsp; // Data stack pointer
     c32_Byte running;
     c32_Byte* mem;
+    struct c32_InterruptHandler* firstHandler;
+    struct c32_InterruptHandler* lastHandler;
 } CORE32;
 
+typedef struct c32_InterruptHandler {
+    c32_Long id;
+    void (*callback)(CORE32* vm);
+    struct c32_InterruptHandler* next;
+} c32_InterruptHandler;
+
 CORE32* c32_new(c32_Byte* code, c32_Long codeLength);
+void c32_registerHandler(CORE32* vm, c32_Long id, void (*callback)(struct CORE32* vm));
+c32_Long c32_pop(CORE32* vm, c32_Byte mode);
+c32_Float c32_popFloat(CORE32* vm, c32_Byte mode);
+void c32_push(CORE32* vm, c32_Byte mode, c32_Long data);
+void c32_pushFloat(CORE32* vm, c32_Byte mode, c32_Float data);
 void c32_step(CORE32* vm);
 
 #endif

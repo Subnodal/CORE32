@@ -8,12 +8,14 @@ start:
     test7
     ret
 
+#OUTB: {'o' int'}
+
 outputHexDigit: ( nibble' -- )
     dup' 9' >' $.letter if
-    '0' +' int' ret
+    '0' +' #OUTB ret
 
     .letter:
-        'A' 10' -' +' int' ret
+        'A' 10' -' +' #OUTB ret
 
 outputHexByte: ( byte' -- )
     dup' 4' >>' outputHexDigit
@@ -29,7 +31,7 @@ outputHexLongPart: ( long -- )
 
 outputHexLong: ( long -- )
     outputHexLongPart
-    '\n' int'
+    '\n' #OUTB
     ret
 
 outputDecPart: ( value -- )
@@ -52,26 +54,26 @@ outputDecPart: ( value -- )
 
 outputDec: ( value -- )
     outputDecPart
-    '\n' int'
+    '\n' #OUTB
     ret
 
 test1: ( Simple count-controlled loop )
-    'A' int' ( Print A )
+    'A' #OUTB ( Print A )
 
     10 ( Loop 10 times )
 
     .loop:
-        'B' int' ( Print B )
+        'B' #OUTB ( Print B )
         -- ( Decrement loop counter )
         dup 0 > $.loop if ( Loop if not zero )
 
-    '\n' int' ( Print newline )
+    '\n' #OUTB ( Print newline )
 
     ret
 
 test2: ( Outputting hex )
     0xA1B2C3D4 outputHexLong
-    '\n' int'
+    '\n' #OUTB
     ret
 
 test3: ( Fibonacci sequence )
@@ -91,14 +93,14 @@ test3: ( Fibonacci sequence )
     ret
 
 test4: ( Groups )
-    {'A' int'}
-    {0' ?{'B' int'}}
-    {1' ?{'C' int'}}
-    :{0x44' int' ret}
-    ${0x45' int'}
+    {'A' #OUTB}
+    {0' ?{'B' #OUTB}}
+    {1' ?{'C' #OUTB}}
+    :{0x44' #OUTB ret}
+    ${0x45' #OUTB}
     call
 
-    '\n' int'
+    '\n' #OUTB
 
     ret
 
@@ -106,7 +108,7 @@ print: ( $string -- )
     .loop:
         dup get'
         dup' 0' =' $.end if
-        int'
+        #OUTB
         ++
         $.loop jump
 
@@ -134,8 +136,8 @@ printPerson: ( $person -- )
     " is " print
     dup #Person.age + get outputDecPart
     " years old and is on team " print
-    #Person.team + get' int'
-    '\n' int'
+    #Person.team + get' #OUTB
+    '\n' #OUTB
     ret
 
 test6: ( Objects )

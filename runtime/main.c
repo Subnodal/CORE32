@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "core32.h"
+#include "handlers.h"
 
 // unsigned char code[] = {
 //     C32_OP_PUT | C32_FMT_SHORT, 0x12, 0x34,             // 0x3412"
@@ -88,6 +89,8 @@ int main(int argc, char* argv[]) {
     data[size + C32_ENTRY_POINT] = '\0';
 
     vm = c32_new(data, size + C32_ENTRY_POINT);
+
+    c32_registerBaseHandlers(vm);
 
     while (vm->running) {
         c32_step(vm);
