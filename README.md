@@ -14,10 +14,10 @@ To run the runtime with the binary file `$FILE`, run:
 runtime/build/core32 $FILE
 ```
 
-To assemble the assembly code file `$FILE`, run:
+To assemble the assembly code file `$IN_FILE` to `$OUT_FILE`, run:
 
 ```bash
-assembler/build/coreasm $FILE
+assembler/build/coreasm $IN_FILE -o $OUT_FILE
 ```
 
 ## Format
