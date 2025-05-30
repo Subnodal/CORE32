@@ -6,7 +6,10 @@ start:
     test5
     test6
     test7
+    imported_output
     ret
+
++./test/imported.casm
 
 #OUTB: {'o' int'}
 

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "files.h"
 #include "parser.h"
 #include "assembler.h"
 
@@ -12,32 +13,15 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    FILE* fp = fopen(argv[1], "r");
+    char* data;
 
-    if (!fp) {
-        fprintf(stderr, "Error when reading file\n");
-
-        return 1;
-    }
-
-    fseek(fp, 0, SEEK_END);
-
-    size_t size = ftell(fp);
-    char* data = malloc(size + 1);
-
-    fseek(fp, 0, SEEK_SET);
-
-    if (fread(data, sizeof(char), size, fp) != size) {
+    if (!readFile(argv[1], &data, NULL)) {
         fprintf(stderr, "Error reading file contents\n");
 
         return 1;
     }
 
-    data[size] = '\0';
-
     Token* firstToken = parse(data);
-
-    fclose(fp);
 
     free(data);
 
@@ -55,7 +39,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    fp = fopen(argv[3], "w");
+    FILE* fp = fopen(argv[3], "w");
 
     if (!fp) {
         fprintf(stderr, "Error when writing file\n");

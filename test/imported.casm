@@ -1,0 +1,4 @@
+imported_output:
+    "This was imported!\n" print
+
+    ret

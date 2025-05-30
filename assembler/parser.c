@@ -1,7 +1,9 @@
-#include "parser.h"
-
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "parser.h"
+#include "files.h"
 
 #define MATCH_BASE(prefix, base) if (matchChars(&code, prefix, false)) { \
     if (!matchUInt(&code, base, &intResult)) goto error; \
@@ -185,6 +187,41 @@ bool matchString(char** codePtr, char** resultPtr) {
     }
 
     i++; // To match string's closing quote
+
+    result[resultLength] = '\0';
+
+    *codePtr += i;
+    *resultPtr = result;
+
+    return true;
+}
+
+bool matchPath(char** codePtr, char** resultPtr) {
+    unsigned int i = 0;
+    unsigned char* code = *codePtr;
+    char* result = malloc(1);
+    unsigned int resultLength = 0;
+    bool escaping = false;
+
+    if (code[i] != '.') {
+        static char* prefix = "~/";
+
+        resultLength = strlen(prefix);
+        result = realloc(result, resultLength);
+
+        strcpy(result, prefix);
+    }
+
+    while (code[i] != '\0' && (escaping || code[i] != ' ' && code[i] != '\t' && code[i] != '\n')) {
+        char c = code[i++];
+
+        escaping = !escaping && c == '\\';
+
+        if (escaping) continue;
+
+        result = realloc(result, resultLength + 1);
+        result[resultLength++] = c;
+    }
 
     result[resultLength] = '\0';
 
@@ -410,6 +447,26 @@ Token* parse(char* code) {
             }
 
             goto addToken;
+        }
+
+        if (code[0] == '+') {
+            char* path;
+            char* includedCode = NULL;
+
+            code++;
+
+            matchPath(&code, &path);
+
+            if (!readFile(path, &includedCode, NULL)) goto error;
+
+            Token* includedToken = parse(includedCode);
+
+            lastToken->next = includedToken;
+            lastToken = includedToken;
+
+            while (lastToken->next) lastToken = lastToken->next;
+
+            continue;
         }
 
         if (code[0] == '@') {

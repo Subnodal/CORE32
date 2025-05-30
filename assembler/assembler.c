@@ -1,7 +1,7 @@
-#include "assembler.h"
-
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "assembler.h"
 
 const char WIDTHS[4] = {1, 2, 4, 4};
 
