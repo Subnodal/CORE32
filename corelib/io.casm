@@ -1,0 +1,14 @@
+io_print: ( $string -- )
+    .loop:
+        dup get'
+        dup' 0' =' $.end if
+        'o' int'
+        ++
+        $.loop jump
+
+    .end:
+        drop
+        drop'
+        ret
+
+print: io_print ret

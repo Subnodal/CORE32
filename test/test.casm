@@ -9,6 +9,7 @@ start:
     imported_output
     ret
 
++io.casm
 +./imported.casm
 
 #OUTB: {'o' int'}
@@ -106,19 +107,6 @@ test4: ( Groups )
     '\n' #OUTB
 
     ret
-
-print: ( $string -- )
-    .loop:
-        dup get'
-        dup' 0' =' $.end if
-        #OUTB
-        ++
-        $.loop jump
-
-    .end:
-        drop
-        drop'
-        ret
 
 testString: ["Test string!\n" 0]
 

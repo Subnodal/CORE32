@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <libgen.h>
+#include <unistd.h>
+#include <linux/limits.h>
 
 #include "parser.h"
 #include "files.h"
@@ -34,6 +36,42 @@ char* opSymbols[] = {
 
 unsigned long* includedPaths = NULL;
 unsigned int includedPathsCount = 0;
+
+char* joinPaths(const char* base, const char* relative) {
+    char* result = malloc(strlen(base) + strlen(relative) + 2);
+
+    result[0] = '\0';
+
+    strcat(result, base);
+    strcat(result, "/");
+    strcat(result, relative);
+
+    return result;
+}
+
+unsigned long hashPath(char* path) {
+    // Using djb2 algorithm for hashing
+
+    unsigned int i = 0;
+    unsigned long hash = 5381;
+
+    while (true) {
+        if (!(
+            (path[i] >= 'a' && path[i] <= 'z') ||
+            (path[i] >= 'A' && path[i] <= 'Z') ||
+            path[i] == '_' ||
+            (i > 0 && path[i] >= '0' && path[i] <= '9')
+        )) {
+            break;
+        }
+
+        hash = (hash << 5) + hash + path[i];
+
+        i++;
+    }
+
+    return hash;
+}
 
 char getEscapeChar(char c) {
     switch (c) {
@@ -205,15 +243,23 @@ bool matchPath(char** codePtr, char** resultPtr) {
     unsigned char* code = *codePtr;
     char* result = malloc(1);
     unsigned int resultLength = 0;
+    bool corelib = false;
     bool escaping = false;
 
     if (code[i] != '.') {
-        static char* prefix = "~/";
+        char selfPath[PATH_MAX];
 
+        readlink("/proc/self/exe", selfPath, PATH_MAX);
+
+        char* prefix = joinPaths(dirname(selfPath), "../../corelib/");
+
+        corelib = true;
         resultLength = strlen(prefix);
-        result = realloc(result, resultLength);
+        result = realloc(result, resultLength + 1);
 
         strcpy(result, prefix);
+
+        free(prefix);
     }
 
     while (code[i] != '\0' && (escaping || code[i] != ' ' && code[i] != '\t' && code[i] != '\n')) {
@@ -232,7 +278,7 @@ bool matchPath(char** codePtr, char** resultPtr) {
     *codePtr += i;
     *resultPtr = result;
 
-    return true;
+    return !corelib;
 }
 
 Format getFormatSuffix(char** code) {
@@ -252,42 +298,6 @@ Format getFormatSuffix(char** code) {
     }
 
     return FMT_LONG;
-}
-
-char* joinPaths(const char* base, const char* relative) {
-    char* result = malloc(strlen(base) + strlen(relative) + 2);
-
-    result[0] = '\0';
-
-    strcat(result, base);
-    strcat(result, "/");
-    strcat(result, relative);
-
-    return result;
-}
-
-unsigned long hashPath(char* path) {
-    // Using djb2 algorithm for hashing
-
-    unsigned int i = 0;
-    unsigned long hash = 5381;
-
-    while (true) {
-        if (!(
-            (path[i] >= 'a' && path[i] <= 'z') ||
-            (path[i] >= 'A' && path[i] <= 'Z') ||
-            path[i] == '_' ||
-            (i > 0 && path[i] >= '0' && path[i] <= '9')
-        )) {
-            break;
-        }
-
-        hash = (hash << 5) + hash + path[i];
-
-        i++;
-    }
-
-    return hash;
 }
 
 Token* parse(char* code, char* path) {
@@ -498,11 +508,19 @@ Token* parse(char* code, char* path) {
 
             code++;
 
-            matchPath(&code, &relativePath);
+            if (matchPath(&code, &relativePath)) {
+                includedPath = realpath(joinPaths(dirname(path), relativePath), NULL);
 
-            includedPath = realpath(joinPaths(dirname(path), relativePath), NULL);
+                 if (!includedPath) {
+                    fprintf(stderr, "Invalid path: %s\n", relativePath);
 
-            free(relativePath);
+                    goto error;
+                }
+
+                free(relativePath);
+            } else {
+                includedPath = relativePath;
+            }
 
             unsigned long hashedPath = hashPath(includedPath);
 
