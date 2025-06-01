@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <libgen.h>
 
 #include "parser.h"
 #include "files.h"
@@ -250,7 +251,19 @@ Format getFormatSuffix(char** code) {
     return FMT_LONG;
 }
 
-Token* parse(char* code) {
+char* joinPaths(const char* base, const char* relative) {
+    char* result = malloc(strlen(base) + strlen(relative) + 2);
+
+    result[0] = '\0';
+
+    strcat(result, base);
+    strcat(result, "/");
+    strcat(result, relative);
+
+    return result;
+}
+
+Token* parse(char* code, char* path) {
     Token* firstToken = NULL;
     Token* lastToken = NULL;
     Token tokenToAdd;
@@ -450,18 +463,27 @@ Token* parse(char* code) {
         }
 
         if (code[0] == '+') {
-            char* path;
+            char* includedPath;
+            char* relativePath;
             char* includedCode = NULL;
 
             code++;
 
-            matchPath(&code, &path);
+            matchPath(&code, &relativePath);
 
-            if (!readFile(path, &includedCode, NULL)) goto error;
+            includedPath = joinPaths(dirname(path), relativePath);
 
-            Token* includedToken = parse(includedCode);
+            free(relativePath);
 
-            lastToken->next = includedToken;
+            if (!readFile(includedPath, &includedCode, NULL)) goto error;
+
+            Token* includedToken = parse(includedCode, includedPath);
+
+            free(includedPath);
+
+            if (!firstToken) firstToken = includedToken;
+            if (lastToken) lastToken->next = includedToken;
+
             lastToken = includedToken;
 
             while (lastToken->next) lastToken = lastToken->next;

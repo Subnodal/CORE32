@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    Token* firstToken = parse(data);
+    Token* firstToken = parse(data, argv[1]);
 
     free(data);
 

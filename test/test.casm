@@ -9,7 +9,7 @@ start:
     imported_output
     ret
 
-+./test/imported.casm
++./imported.casm
 
 #OUTB: {'o' int'}
 

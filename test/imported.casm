@@ -1,4 +1,8 @@
++./imported/a.casm
+
 imported_output:
     "This was imported!\n" print
+
+    a_output
 
     ret

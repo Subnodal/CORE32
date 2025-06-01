@@ -64,7 +64,7 @@ bool matchUInt(char** codePtr, int base, unsigned int* result);
 bool matchIdentifier(char** codePtr, unsigned long* result);
 Format getFormatSuffix(char** codePtr);
 
-Token* parse(char* code);
+Token* parse(char* code, char* path);
 void inspect(Token* token);
 
 #endif

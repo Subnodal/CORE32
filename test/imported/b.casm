@@ -1,0 +1,8 @@
++../c.casm
+
+b_output:
+    "This is import B!\n" print
+
+    c_output
+
+    ret

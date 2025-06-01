@@ -1,0 +1,4 @@
+c_output:
+    "This is import C!\n" print
+
+    ret
