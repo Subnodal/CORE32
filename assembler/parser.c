@@ -32,6 +32,9 @@ char* opSymbols[] = {
     NULL
 };
 
+unsigned long* includedPaths = NULL;
+unsigned int includedPathsCount = 0;
+
 char getEscapeChar(char c) {
     switch (c) {
         case 'a': return '\a';
@@ -263,6 +266,30 @@ char* joinPaths(const char* base, const char* relative) {
     return result;
 }
 
+unsigned long hashPath(char* path) {
+    // Using djb2 algorithm for hashing
+
+    unsigned int i = 0;
+    unsigned long hash = 5381;
+
+    while (true) {
+        if (!(
+            (path[i] >= 'a' && path[i] <= 'z') ||
+            (path[i] >= 'A' && path[i] <= 'Z') ||
+            path[i] == '_' ||
+            (i > 0 && path[i] >= '0' && path[i] <= '9')
+        )) {
+            break;
+        }
+
+        hash = (hash << 5) + hash + path[i];
+
+        i++;
+    }
+
+    return hash;
+}
+
 Token* parse(char* code, char* path) {
     Token* firstToken = NULL;
     Token* lastToken = NULL;
@@ -273,6 +300,8 @@ Token* parse(char* code, char* path) {
     unsigned long hashResult = 0;
     Format resultFormat = FMT_BYTE;
     bool expectSizeOfLocalNext = false;
+
+    if (!includedPaths) includedPaths = malloc(0);
 
     while (code[0]) {
         TokenType numberTokenType = TOK_INT;
@@ -471,15 +500,22 @@ Token* parse(char* code, char* path) {
 
             matchPath(&code, &relativePath);
 
-            includedPath = joinPaths(dirname(path), relativePath);
+            includedPath = realpath(joinPaths(dirname(path), relativePath), NULL);
 
             free(relativePath);
+
+            unsigned long hashedPath = hashPath(includedPath);
+
+            for (unsigned int i = 0; i < includedPathsCount; i++) {
+                if (includedPaths[i] == hashedPath) goto skipInclusion;
+            }
+
+            includedPaths = realloc(includedPaths, sizeof(unsigned long) * (++includedPathsCount));
+            includedPaths[includedPathsCount - 1] = hashedPath;
 
             if (!readFile(includedPath, &includedCode, NULL)) goto error;
 
             Token* includedToken = parse(includedCode, includedPath);
-
-            free(includedPath);
 
             if (!firstToken) firstToken = includedToken;
             if (lastToken) lastToken->next = includedToken;
@@ -487,6 +523,10 @@ Token* parse(char* code, char* path) {
             lastToken = includedToken;
 
             while (lastToken->next) lastToken = lastToken->next;
+
+            skipInclusion:
+
+            free(includedPath);
 
             continue;
         }
