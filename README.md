@@ -1,5 +1,5 @@
 # CORE32
-A small, stack-based virtual machine.
+A small, stack-based virtual machine and assembly language.
 
 ## Building and running
 To build the CORE32 runtime and assembler, run:
