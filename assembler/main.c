@@ -41,13 +41,11 @@ int main(int argc, char* argv[]) {
 
     FILE* fp = fopen(argv[3], "w");
 
-    if (!fp) {
+    if (!writeFile(argv[3], output + offset, length - offset)) {
         fprintf(stderr, "Error when writing file\n");
 
         return 1;
     }
-
-    fwrite(output + offset, 1, length - offset, fp);
 
     return 0;
 }

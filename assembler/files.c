@@ -29,3 +29,16 @@ bool readFile(char* path, char** dataPtr, size_t* sizePtr) {
 
     return true;
 }
+
+bool writeFile(char* path, char* data, size_t size) {
+    FILE* fp = fopen(path, "w");
+
+    if (!fp) {
+        return false;
+    }
+
+    fwrite(data, 1, size, fp);
+    fclose(fp);
+
+    return true;
+}
