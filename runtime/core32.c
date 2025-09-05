@@ -36,6 +36,7 @@ CORE32* c32_new(c32_Byte* code, c32_Long codeLength) {
     vm->ip = C32_ENTRY_POINT;
     vm->csp = C32_CSP_BASE;
     vm->dsp = C32_DSP_BASE;
+    vm->ssr = C32_ENTRY_POINT;
     vm->running = 1;
     vm->mem = C32_MALLOC(C32_MEM_SIZE);
     vm->firstHandler = 0;

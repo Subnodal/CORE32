@@ -6,6 +6,7 @@ start:
     test5
     test6
     test7
+    test8
     imported_output
     ret
 
@@ -162,3 +163,30 @@ test7: ( Macros )
 
     5 #MACRO_C
     10 #MACRO_C
+
+handler: ( * callId -- * )
+    dup 1 = ?{
+        "Call A!\n" print
+        drop ret
+    }
+
+    dup 2 = ?{
+        "Call B!\n" print
+        drop ret
+    }
+
+    "Invalid system call\n" print
+
+    drop ret
+
+#CALL_A: {1 's' int'}
+#CALL_B: {2 's' int'}
+
+test8: ( System calls )
+    "Test!\n" print
+    $handler 'R' int'
+
+    #CALL_A
+    #CALL_B
+
+    ret

@@ -65,8 +65,9 @@ typedef union c32_LongOrFloat {
 
 typedef struct CORE32 {
     c32_Long ip; // Instruction pointer
-    c32_Long csp; // Core stack pointer
+    c32_Long csp; // Call stack pointer
     c32_Long dsp; // Data stack pointer
+    c32_Long ssr; // System call service routine address
     c32_Byte running;
     c32_Byte* mem;
     struct c32_InterruptHandler* firstHandler;
@@ -85,6 +86,8 @@ c32_Long c32_pop(CORE32* vm, c32_Byte mode);
 c32_Float c32_popFloat(CORE32* vm, c32_Byte mode);
 void c32_push(CORE32* vm, c32_Byte mode, c32_Long data);
 void c32_pushFloat(CORE32* vm, c32_Byte mode, c32_Float data);
+void c32_pushCall(CORE32* vm, c32_Long data);
+c32_Long c32_popCall(CORE32* vm);
 void c32_step(CORE32* vm);
 
 #endif
