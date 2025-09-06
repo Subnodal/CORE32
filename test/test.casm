@@ -164,13 +164,15 @@ test7: ( Macros )
     5 #MACRO_C
     10 #MACRO_C
 
+    ret
+
 handler: ( * callId -- * )
-    dup 1 = ?{
+    dup [put "calA"] = ?{
         "Call A!\n" print
         drop ret
     }
 
-    dup 2 = ?{
+    dup [put "calB"] = ?{
         "Call B!\n" print
         drop ret
     }
@@ -179,8 +181,8 @@ handler: ( * callId -- * )
 
     drop ret
 
-#CALL_A: {1 's' int'}
-#CALL_B: {2 's' int'}
+#CALL_A: {[put "calA"] int}
+#CALL_B: {[put "calB"] int}
 
 test8: ( System calls )
     "Test!\n" print

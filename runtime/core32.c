@@ -252,10 +252,13 @@ void c32_step(CORE32* vm) {
             for (c32_InterruptHandler* handler = vm->firstHandler; handler; handler = handler->next) {
                 if (handler->id == id) {
                     handler->callback(vm);
-                    break;
+                    goto foundHandler;
                 }
             }
-            break;
+            c32_push(vm, C32_FMT_LONG, id);
+            c32_pushCall(vm, vm->ip);
+            vm->ip = vm->ssr;
+            foundHandler: break;
         }
 
         case C32_OP_GET: {
