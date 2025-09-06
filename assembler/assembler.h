@@ -53,6 +53,8 @@ typedef struct MacroLevel {
     struct MacroLevel* next;
 } MacroLevel;
 
-void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr);
+void addC32Header();
+void addC32References();
+void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, bool useC32Format);
 
 #endif

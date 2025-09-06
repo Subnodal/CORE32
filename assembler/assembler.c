@@ -12,6 +12,7 @@ Label* firstLabel;
 Label* lastLabel;
 Reference* firstReference;
 Reference* lastReference;
+unsigned int referenceCount;
 GroupLevel* firstGroupLevel;
 GroupLevel* lastGroupLevel;
 Macro* firstMacro;
@@ -53,6 +54,12 @@ void outputW(unsigned long value, Format format) {
     if (width >= 2) outputB((value & 0x0000FF00) >> 8);
     if (width >= 3) outputB((value & 0x00FF0000) >> 16);
     if (width >= 4) outputB((value & 0xFF000000) >> 24);
+}
+
+void outputChars(char* chars, unsigned int length) {
+    for (unsigned int i = 0; i < length; i++) {
+        outputB(chars[i]);
+    }
 }
 
 Format getShortestFormat(unsigned long value) {
@@ -101,6 +108,7 @@ void createReference(Token* token, unsigned long globalIdHash) {
     if (lastReference) lastReference->next = reference;
 
     lastReference = reference;
+    referenceCount++;
 }
 
 void pushGroupLevel(Token* token) {
@@ -343,7 +351,36 @@ Macro* reoslveMacro(unsigned long idHash) {
     return NULL;
 }
 
-void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
+void addC32Header() {
+    outputB(0);
+    outputChars("C32", 3);
+    outputW(0, FMT_LONG);
+
+    outputChars("CODE", 4);
+    outputW(0, FMT_LONG); // Code length will be stored here
+}
+
+void addC32References() {
+    unsigned long savedPos = pos;
+
+    pos = 0x400 + 12;
+    outputW(savedPos - pos, FMT_LONG); // Store code length
+
+    pos = savedPos;
+
+    outputChars("REFS", 4);
+    outputW(referenceCount, FMT_LONG);
+
+    Reference* currentReference = firstReference;
+
+    while (currentReference) {
+        outputW(currentReference->pos, FMT_LONG);
+
+        currentReference = currentReference-> next;
+    }
+}
+
+void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, bool useC32Format) {
     output = malloc(BLOCK_SIZE);
     pos = 0x400;
     length = 0;
@@ -358,8 +395,13 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
     firstMacroLevel = NULL;
     lastMacroLevel = NULL;
     macroLevelCount = 0;
+    referenceCount = 0;
 
     grow();
+
+    if (useC32Format) {
+        addC32Header();
+    }
 
     Token* token = firstToken;
     unsigned long currentGlobalHashId = 0;
@@ -560,6 +602,10 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr) {
     setLabelSize(currentGlobalHashId, currentLocalHashId, pos - currentLocalStartPos);
 
     resolveReferences();
+
+    if (useC32Format) {
+        addC32References();
+    }
 
     *outputPtr = realloc(output, length);
     *lengthPtr = length;
