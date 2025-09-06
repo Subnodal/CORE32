@@ -55,16 +55,7 @@ unsigned long hashPath(char* path) {
     unsigned int i = 0;
     unsigned long hash = 5381;
 
-    while (true) {
-        if (!(
-            (path[i] >= 'a' && path[i] <= 'z') ||
-            (path[i] >= 'A' && path[i] <= 'Z') ||
-            path[i] == '_' ||
-            (i > 0 && path[i] >= '0' && path[i] <= '9')
-        )) {
-            break;
-        }
-
+    while (path[i]) {
         hash = (hash << 5) + hash + path[i];
 
         i++;
@@ -509,9 +500,13 @@ Token* parse(char* code, char* path) {
             code++;
 
             if (matchPath(&code, &relativePath)) {
-                includedPath = realpath(joinPaths(dirname(path), relativePath), NULL);
+                char* pathDir = dirname(strdup(path));
 
-                 if (!includedPath) {
+                includedPath = realpath(joinPaths(pathDir, relativePath), NULL);
+
+                free(pathDir);
+
+                if (!includedPath) {
                     fprintf(stderr, "Invalid path: %s\n", relativePath);
 
                     goto error;
@@ -527,6 +522,8 @@ Token* parse(char* code, char* path) {
             for (unsigned int i = 0; i < includedPathsCount; i++) {
                 if (includedPaths[i] == hashedPath) goto skipInclusion;
             }
+
+            printf("Including: %s\n", includedPath);
 
             includedPaths = realloc(includedPaths, sizeof(unsigned long) * (++includedPathsCount));
             includedPaths[includedPathsCount - 1] = hashedPath;

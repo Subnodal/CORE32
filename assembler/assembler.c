@@ -361,6 +361,8 @@ void addC32Header() {
 }
 
 void addC32References() {
+    outputB(0);
+
     unsigned long savedPos = pos;
 
     pos = 0x400 + 12;
@@ -456,6 +458,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                     if (currentGlobalHashId) setLabelSize(currentGlobalHashId, 0, pos - currentGlobalStartPos);
                     if (currentLocalHashId) setLabelSize(currentGlobalHashId, currentLocalHashId, pos - currentLocalStartPos);
                     currentGlobalHashId = token->value.asIdHash;
+                    currentLocalHashId = 0;
                     currentGlobalStartPos = pos;
                     createLabel(currentGlobalHashId, 0);
                 }
@@ -518,7 +521,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
 
                 if (token->format == FMT_LOCAL) {
                     label = resolveLabel(currentGlobalHashId, token->value.asIdHash);
-                } else if (token->type == TOK_SIZE_OF_EXT) {
+                } else if (token->type == TOK_SIZE_OF_OFFSET_EXT) {
                     if (!token->next || token->next->type != TOK_CALL) {
                         fprintf(stderr, "Invalid subsequent token\n");
                         break;
@@ -598,10 +601,15 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
         }
     }
 
+
     setLabelSize(currentGlobalHashId, 0, pos - currentGlobalStartPos);
     setLabelSize(currentGlobalHashId, currentLocalHashId, pos - currentLocalStartPos);
 
+    unsigned long savedPos = pos;
+
     resolveReferences();
+
+    pos = savedPos;
 
     if (useC32Format) {
         addC32References();

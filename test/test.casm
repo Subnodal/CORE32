@@ -7,7 +7,6 @@ start:
     test6
     test7
     test8
-    imported_output
     ret
 
 +io.casm
@@ -28,6 +27,8 @@ outputHexByte: ( byte' -- )
     ret
 
 outputHexLongPart: ( long -- )
+    '0' #OUTB
+    'x' #OUTB
     outputHexByte
     outputHexByte
     outputHexByte
@@ -115,6 +116,8 @@ test5: ( Strings )
     "Hello, world!\n" print
     "This is a test!\n" print
     $testString print
+
+    imported_output
 
     ret
 
