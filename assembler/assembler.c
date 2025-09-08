@@ -50,6 +50,8 @@ void outputB(char byte) {
 void outputW(unsigned long value, Format format) {
     char width = WIDTHS[format];
 
+    if (format == FMT_FLOAT) value = ((LongOrFloat) {.asFloat = value}).asLong;
+
     outputB(value & 0x000000FF);
     if (width >= 2) outputB((value & 0x0000FF00) >> 8);
     if (width >= 3) outputB((value & 0x00FF0000) >> 16);

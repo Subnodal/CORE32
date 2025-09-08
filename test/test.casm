@@ -7,6 +7,7 @@ start:
     test6
     test7
     test8
+    test9
     ret
 
 +io.casm
@@ -62,6 +63,27 @@ outputDec: ( value -- )
     outputDecPart
     '\n' #OUTB
     ret
+
+outputFloat: ( value% -- )
+    dup% from% to dup outputDecPart
+    
+    from to% -%
+    
+    dup% 0% =% $.end if
+
+    '.' #OUTB
+
+    .loop:
+        10% *% dup% from% to dup outputDecPart
+
+        from to% -%
+
+        dup% 0% !=% $.loop if
+
+    .end:
+        '\n' #OUTB
+
+        drop% ret
 
 test1: ( Simple count-controlled loop )
     'A' #OUTB ( Print A )
@@ -193,5 +215,11 @@ test8: ( System calls )
 
     #CALL_A
     #CALL_B
+
+    ret
+
+test9: ( Floating-point )
+    "10 / 7 = " print
+    10% 7% /% outputFloat
 
     ret

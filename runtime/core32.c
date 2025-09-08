@@ -14,7 +14,7 @@ const c32_Byte C32_WIDTHS[4] = {1, 2, 4, 4};
 
 #define C32_LOGIC_OP(op) { \
     if (C32_FMT(inst) == C32_FMT_FLOAT) { \
-        c32_Long b = c32_popFloat(vm, inst); c32_Long a = c32_popFloat(vm, inst); c32_push(vm, C32_FMT_BYTE, a op b); \
+        c32_Float b = c32_popFloat(vm, inst); c32_Float a = c32_popFloat(vm, inst); c32_push(vm, C32_FMT_BYTE, a op b); \
     } else { \
         c32_Long b = c32_pop(vm, inst); c32_Long a = c32_pop(vm, inst); c32_push(vm, C32_FMT_BYTE, a op b); \
     } \

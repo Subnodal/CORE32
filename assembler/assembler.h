@@ -18,6 +18,11 @@
 
 #define MAX_MACRO_DEPTH 16
 
+typedef union LongOrFloat {
+    unsigned long asLong;
+    float asFloat;
+} LongOrFloat;
+
 typedef struct Label {
     unsigned long globalIdHash;
     unsigned long localIdHash;
