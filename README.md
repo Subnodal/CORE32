@@ -20,6 +20,8 @@ To assemble the assembly code file `$IN_FILE` to `$OUT_FILE`, run:
 assembler/build/coreasm $IN_FILE -o $OUT_FILE
 ```
 
+This will produce a relocatable C32 executable file. To produce a raw binary file, use the `--raw` switch.
+
 ## Format
 Instruction format: `ooooorff`
 
