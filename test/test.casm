@@ -222,4 +222,10 @@ test9: ( Floating-point )
     "10 / 7 = " print
     10% 7% /% outputFloat
 
+    "10 / 0 = " print
+    10% 0% /% outputFloat
+
+    "10 % 0 = " print
+    10% 0% %% outputFloat
+
     ret
