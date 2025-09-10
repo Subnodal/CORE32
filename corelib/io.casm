@@ -1,4 +1,4 @@
-io_print: ( $string -- )
+io_print: ( $string -> )
     .loop:
         dup get'
         dup' 0' =' $.end if
