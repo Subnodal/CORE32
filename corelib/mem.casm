@@ -1,0 +1,169 @@
+#_MEM_ALIGN_SIZE: 4
+#_MEM_FLAG_USED: 0x80000000
+
+_mem_heapBase: [0]
+_mem_firstFreeBlock: [0]
+_mem_debugger: [$_mem_defaultDebugger]
+
+_mem_Block: [0]
+
+_mem_align: ( $unaligned -> $aligned )
+    #_MEM_ALIGN_SIZE + 1 - #_MEM_ALIGN_SIZE 1 - 0xFFFFFFFF ^ & ret
+
+_mem_blockIsUsed: ( $addr -> isUsed' )
+    get #_MEM_FLAG_USED & 0 != ret
+
+_mem_blockSize: ( $addr -> size )
+    get {#_MEM_FLAG_USED 1 -} & ret
+
+_mem_blockIsLast: ( $addr -> isLast' )
+    get 0 = ret
+
+_mem_defaultDebugger: ( $message -> )
+    drop ret
+
+_mem_debug: ( $message -> )
+    $_mem_debugger get call ret
+
+mem_init: ( -> )
+    $_mem_heapBase get 0 = ?{
+        ( Get heap base from code end interrupt if not explicitly set )
+        'e' int' $_mem_heapBase set
+    }
+
+    $_mem_firstFreeBlock get 0 = ?{
+        $_mem_heapBase get $_mem_firstFreeBlock set
+    }
+
+    ret
+
+mem_new: ( size -> $addr )
+    ${.size: [0] .currentBlock: [0]}
+
+    $_mem_firstFreeBlock get 0 = ?{
+        0 ret
+    }
+
+    _mem_align $.size set
+    $_mem_firstFreeBlock get $.currentBlock set
+
+    $.size get #_MEM_FLAG_USED & 0 != ?{
+        0 ret
+    }
+
+    .blockSearchLoop:
+        $.currentBlock get _mem_blockIsLast ?{
+            "Use last block\n" _mem_debug
+
+            {$.size get #_MEM_FLAG_USED |} {$.currentBlock get} set
+            0 {{$.currentBlock get} _mem_Block~ + {$.size get} +} set ( Create a new last block after this one )
+
+            $.currentBlock get $_mem_firstFreeBlock get = ?{
+                "  Set next free block\n" _mem_debug
+
+                {{$.currentBlock get} _mem_Block~ + {$.size get} +} $_mem_firstFreeBlock set
+            }
+
+            {{$.currentBlock get} _mem_Block~ +} ret
+        }
+
+        ${.originalBlockSize: [0]}
+        {$.currentBlock get _mem_blockSize +} $.originalBlockSize set
+
+        $.currentBlock get _mem_blockIsUsed ?{
+            "Skip used\n" _mem_debug
+
+            {{$.currentBlock get} _mem_Block~ +} $.currentBlock set
+
+            $.blockSearchLoop jump
+        }
+
+        {$.originalBlockSize get} {$.size get} < ?{
+            ${.originalBlock: [0] .totalUsableSize: [0] .encounteredLastBlock: [0']}
+            0 $.originalBlock set
+            $.originalBlockSize get $.totalUsableSize set
+            0' $.encounteredLastBlock set'
+
+            "Attempt merge\n" _mem_debug
+
+            .blockMergeLoop:
+                $.currentBlock get _mem_Block~ {$.currentBlock get _mem_blockSize} + + $.currentBlock set
+
+                $.currentBlock get _mem_blockIsUsed ?{
+                    "  Encountered used block\n" _mem_debug
+
+                    $.finishBlockMerge jump
+                }
+
+                $.currentBlock get _mem_blockIsLast ?{
+                    "  Encountered last block\n" _mem_debug
+
+                    1' $.encounteredLastBlock set'
+
+                    $.finishBlockMerge jump
+                }
+
+                {{$.totalUsableSize get} {$.currentBlock get get} + _mem_Block~ +} $.totalUsableSize set
+
+                $.blockMergeLoop jump
+
+            .finishBlockMerge:
+
+            $.encounteredLastBlock get dup ?{
+                "  Using last block\n" _mem_debug
+
+                $.originalBlock get $.currentBlock set
+                $.totalUsableSize get $.originalBlockSize set
+
+                0 {{$.currentBlock get} _mem_Block~ + {$.size get} +} set ( Create a new last block after this one )
+            } ! ?{
+                $.totalUsableSize get {$.originalBlock get} set
+
+                {$.totalUsableSize get} {$.size get _mem_Block~ +} < ?{
+                    drop $.blockSearchLoop jump
+                }
+
+                "  Use merged block\n" _mem_debug
+
+                $.originalBlock get $.currentBlock set
+                $.totalUsableSize get $.originalBlockSize set
+            }
+        }
+
+        {$.originalBlockSize get} {$.size get _mem_Block~ + #_MEM_ALIGN_SIZE +} > ?{
+            ( Split this block so that the rest can be used for other purposes )
+
+            "Split block\n" _mem_debug
+
+            $.size get {$.currentBlock get} set
+            {{$.originalBlockSize get} {$.size get} - _mem_Block~ -} {{$.currentBlock get} _mem_Block~ + {$.size get} +} set
+        }
+
+        "Mark as used\n" _mem_debug
+
+        {$.currentBlock get} get #_MEM_FLAG_USED | {$.currentBlock get} set
+
+        $.currentBlock get $_mem_firstFreeBlock = ?{
+            "Search for a new first free block\n" _mem_debug
+
+            .findNewFirstFreeBlockLoop:
+                $_mem_firstFreeBlock _mem_blockIsUsed ?{
+                    $.foundNewFirstFreeBlock jump
+                }
+
+                {{$_mem_firstFreeBlock get} {{$_mem_firstFreeBlock get} _mem_blockSize} +} _mem_Block + $_mem_firstFreeBlock set
+
+                $.findNewFirstFreeBlockLoop jump
+
+            .foundNewFirstFreeBlock:
+        }
+
+        $.currentBlock get _mem_Block~ + ret
+
+mem_setHeapBase: ( $addr -> )
+    $_mem_heapBase set ret
+
+mem_setDebugger: ( $callback( $message -> ) -> )
+    $_mem_debugger set ret
+
+new: mem_new ret

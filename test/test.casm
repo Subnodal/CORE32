@@ -30,10 +30,7 @@ outputHexByte: ( byte' -> )
 outputHexLongPart: ( long -> )
     '0' #OUTB
     'x' #OUTB
-    outputHexByte
-    outputHexByte
-    outputHexByte
-    outputHexByte
+    printLongHex
     ret
 
 outputHexLong: ( long -> )
@@ -41,31 +38,8 @@ outputHexLong: ( long -> )
     '\n' #OUTB
     ret
 
-outputDecPart: ( value -> )
-    ${.i: [0] .minI: [0] .value: [0] .buffer: [~8 0']}
-
-    $.value set
-
-    7 $.i set
-    7 $.minI set
-
-    .loop:
-        {{$.value get' 10' %'} '0' +'} {$.i get $.buffer +} set'
-        $.i get -- $.i set
-        $.value get 10 / $.value set
-        $.value get 0 != ?{$.i get $.minI set}
-        $.i get 0 != $.loop if
-
-    $.minI get $.buffer + print
-    ret
-
-outputDec: ( value -> )
-    outputDecPart
-    '\n' #OUTB
-    ret
-
 outputFloat: ( value% -> )
-    dup% from% to dup outputDecPart
+    dup% from% to dup printLong
     
     from to% -%
     
@@ -74,7 +48,7 @@ outputFloat: ( value% -> )
     '.' #OUTB
 
     .loop:
-        10% *% dup% from% to dup outputDecPart
+        10% *% dup% from% to dup printLong
 
         from to% -%
 
@@ -151,7 +125,7 @@ Person:
 printPerson: ( $person -> )
     dup #Person.name + get print
     " is " print
-    dup #Person.age + get outputDecPart
+    dup #Person.age + get printLong
     " years old and is on team " print
     #Person.team + get' #OUTB
     '\n' #OUTB
@@ -180,7 +154,7 @@ test6: ( Objects )
 
 #MACRO_A: 0x1234
 #MACRO_B: 0x5678
-#MACRO_C: {2 * outputDec}
+#MACRO_C: {2 * printLong '\n' printChar }
 
 test7: ( Macros )
     #MACRO_A outputHexLong

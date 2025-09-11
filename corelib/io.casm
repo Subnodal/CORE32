@@ -1,8 +1,11 @@
+io_printChar: ( char' -> )
+    'o' int' ret
+
 io_print: ( $string -> )
     .loop:
         dup get'
         dup' 0' =' $.end if
-        'o' int'
+        io_printChar
         ++
         $.loop jump
 
@@ -11,4 +14,45 @@ io_print: ( $string -> )
         drop'
         ret
 
+io_printLong: ( value -> )
+    ${.i: [0] .minI: [0] .value: [0] .buffer: [~8 0']}
+
+    $.value set
+
+    7 $.i set
+    7 $.minI set
+
+    .loop:
+        {{$.value get' 10' %'} '0' +'} {$.i get $.buffer +} set'
+        $.i get -- $.i set
+        $.value get 10 / $.value set
+        $.value get 0 != ?{$.i get $.minI set}
+        $.i get 0 != $.loop if
+
+    $.minI get $.buffer + io_print
+    ret
+
+_io_printHexNibble: ( nibble' -> )
+    dup' 9' >' $.letter if
+    '0' +' io_printChar ret
+
+    .letter:
+        'A' 10' -' +' io_printChar ret
+
+io_printByteHex: ( byte' -> )
+    dup' 4' >>' _io_printHexNibble
+    0b1111' &' _io_printHexNibble
+    ret
+
+io_printLongHex: ( long -> )
+    io_printByteHex
+    io_printByteHex
+    io_printByteHex
+    io_printByteHex
+    ret
+
 print: io_print ret
+printChar: io_printChar ret
+printLong: io_printLong ret
+printByteHex: io_printByteHex ret
+printLongHex: io_printLongHex ret

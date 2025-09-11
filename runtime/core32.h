@@ -70,6 +70,8 @@ typedef struct CORE32 {
     c32_Long ssr; // System call service routine address
     c32_Byte running;
     c32_Byte* mem;
+    c32_Long memLimit;
+    c32_Long codeEnd;
     struct c32_InterruptHandler* firstHandler;
     struct c32_InterruptHandler* lastHandler;
 } CORE32;

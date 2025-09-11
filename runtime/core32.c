@@ -39,6 +39,8 @@ CORE32* c32_new(c32_Byte* code, c32_Long codeLength) {
     vm->ssr = C32_ENTRY_POINT;
     vm->running = 1;
     vm->mem = C32_MALLOC(C32_MEM_SIZE);
+    vm->memLimit = 0;
+    vm->codeEnd = codeLength;
     vm->firstHandler = 0;
     vm->lastHandler = 0;
 

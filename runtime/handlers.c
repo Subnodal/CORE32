@@ -39,6 +39,12 @@ C32_HANDLER_SETTER(c32_setDsp, vm->dsp, C32_FMT_LONG);
 C32_HANDLER_GETTER(c32_getSsr, vm->ssr, C32_FMT_LONG);
 C32_HANDLER_SETTER(c32_setSsr, vm->ssr, C32_FMT_LONG);
 
+C32_HANDLER_GETTER(c32_getMemLimit, vm->memLimit, C32_FMT_LONG);
+C32_HANDLER_SETTER(c32_setMemLimit, vm->memLimit, C32_FMT_LONG);
+
+C32_HANDLER_GETTER(c32_getCodeEnd, vm->codeEnd, C32_FMT_LONG);
+C32_HANDLER_SETTER(c32_setCodeEnd, vm->codeEnd, C32_FMT_LONG);
+
 void c32_registerBaseHandlers(CORE32* vm) {
     c32_registerHandler(vm, 'o', c32_outputByte);
     c32_registerHandler(vm, 'c', c32_getCsp);
@@ -47,4 +53,8 @@ void c32_registerBaseHandlers(CORE32* vm) {
     c32_registerHandler(vm, 'D', c32_setDsp);
     c32_registerHandler(vm, 'r', c32_getSsr);
     c32_registerHandler(vm, 'R', c32_setSsr);
+    c32_registerHandler(vm, 'e', c32_getCodeEnd);
+    c32_registerHandler(vm, 'E', c32_setCodeEnd);
+    c32_registerHandler(vm, 'l', c32_getMemLimit);
+    c32_registerHandler(vm, 'L', c32_setMemLimit);
 }

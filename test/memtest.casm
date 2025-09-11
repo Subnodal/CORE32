@@ -1,0 +1,14 @@
+start:
+    ($io_print mem_setDebugger)
+    mem_init
+
+    "Memory allocation test\n" print
+
+    {"Heap base: " print} {$_mem_heapBase get printLongHex} {'\n' printChar}
+    {"Object A: " print} {16 new printLongHex} {'\n' printChar}
+    {"Object B: " print} {16 new printLongHex} {'\n' printChar}
+
+    ret
+
++io.casm
++mem.casm

@@ -532,6 +532,7 @@ Token* parse(char* code, char* path) {
 
             Token* includedToken = parse(includedCode, includedPath);
 
+            if (!includedToken) goto skipInclusion;
             if (!firstToken) firstToken = includedToken;
             if (lastToken) lastToken->next = includedToken;
 

@@ -603,7 +603,6 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
         }
     }
 
-
     setLabelSize(currentGlobalHashId, 0, pos - currentGlobalStartPos);
     setLabelSize(currentGlobalHashId, currentLocalHashId, pos - currentLocalStartPos);
 
