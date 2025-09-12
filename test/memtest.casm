@@ -1,12 +1,48 @@
 start:
-    ($io_print mem_setDebugger)
+    ${.objectA: [0] .objectB: [0] .objectC: [0]}
+
+    ${.reportObjects:
+        "=== Object report ===\n" print
+        {"Heap base: " print} {$_mem_heapBase get printLongHex} {'\n' printChar}
+        {"First free block: " print} {$_mem_firstFreeBlock get printLongHex} {'\n' printChar}
+        {"Object A: " print} {$.objectA get printLongHex} {'\n' printChar}
+        {"Object B: " print} {$.objectB get printLongHex} {'\n' printChar}
+        {"Object C: " print} {$.objectC get printLongHex} {'\n' printChar}
+        ret
+    }
+
+    $io_print mem_setDebugger
     mem_init
 
     "Memory allocation test\n" print
 
-    {"Heap base: " print} {$_mem_heapBase get printLongHex} {'\n' printChar}
-    {"Object A: " print} {16 new printLongHex} {'\n' printChar}
-    {"Object B: " print} {16 new printLongHex} {'\n' printChar}
+    16 new $.objectA set
+    16 new $.objectB set
+
+    .reportObjects
+
+    "Free object A and create object C\n" print
+
+    $.objectA get free
+    32 new $.objectC set
+
+    .reportObjects
+
+    "Free object B, then recreate objects A and B in reverse order\n" print
+
+    $.objectB get free
+    16 new $.objectB set
+    16 new $.objectA set
+
+    .reportObjects
+
+    "Free objects A and C, then create A where C was\n" print
+
+    $.objectA get free
+    $.objectC get free
+    32 new $.objectA set
+
+    .reportObjects
 
     ret
 

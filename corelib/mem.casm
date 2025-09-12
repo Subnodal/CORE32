@@ -40,16 +40,14 @@ mem_init: ( -> )
 mem_new: ( size -> $addr )
     ${.size: [0] .currentBlock: [0]}
 
-    $_mem_firstFreeBlock get 0 = ?{
-        0 ret
-    }
+    "> new\n" _mem_debug
+
+    $_mem_firstFreeBlock get 0 = ?{0 ret}
 
     _mem_align $.size set
     $_mem_firstFreeBlock get $.currentBlock set
 
-    $.size get #_MEM_FLAG_USED & 0 != ?{
-        0 ret
-    }
+    $.size get #_MEM_FLAG_USED & 0 != ?{0 ret}
 
     .blockSearchLoop:
         $.currentBlock get _mem_blockIsLast ?{
@@ -73,14 +71,14 @@ mem_new: ( size -> $addr )
         $.currentBlock get _mem_blockIsUsed ?{
             "Skip used\n" _mem_debug
 
-            {{$.currentBlock get} _mem_Block~ +} $.currentBlock set
+            {{$.currentBlock get} _mem_Block~ + {$.originalBlockSize get} +} $.currentBlock set
 
             $.blockSearchLoop jump
         }
 
         {$.originalBlockSize get} {$.size get} < ?{
             ${.originalBlock: [0] .totalUsableSize: [0] .encounteredLastBlock: [0']}
-            0 $.originalBlock set
+            $.currentBlock get $.originalBlock set
             $.originalBlockSize get $.totalUsableSize set
             0' $.encounteredLastBlock set'
 
@@ -109,7 +107,7 @@ mem_new: ( size -> $addr )
 
             .finishBlockMerge:
 
-            $.encounteredLastBlock get dup ?{
+            $.encounteredLastBlock get' dup' ?{
                 "  Using last block\n" _mem_debug
 
                 $.originalBlock get $.currentBlock set
@@ -120,7 +118,7 @@ mem_new: ( size -> $addr )
                 $.totalUsableSize get {$.originalBlock get} set
 
                 {$.totalUsableSize get} {$.size get _mem_Block~ +} < ?{
-                    drop $.blockSearchLoop jump
+                    $.blockSearchLoop jump
                 }
 
                 "  Use merged block\n" _mem_debug
@@ -141,7 +139,7 @@ mem_new: ( size -> $addr )
 
         "Mark as used\n" _mem_debug
 
-        {$.currentBlock get} get #_MEM_FLAG_USED | {$.currentBlock get} set
+        {$.currentBlock get get} #_MEM_FLAG_USED | {$.currentBlock get} set
 
         $.currentBlock get $_mem_firstFreeBlock = ?{
             "Search for a new first free block\n" _mem_debug
@@ -151,7 +149,7 @@ mem_new: ( size -> $addr )
                     $.foundNewFirstFreeBlock jump
                 }
 
-                {{$_mem_firstFreeBlock get} {{$_mem_firstFreeBlock get} _mem_blockSize} +} _mem_Block + $_mem_firstFreeBlock set
+                {{$_mem_firstFreeBlock get} {$_mem_firstFreeBlock get _mem_blockSize} +} _mem_Block + $_mem_firstFreeBlock set
 
                 $.findNewFirstFreeBlockLoop jump
 
@@ -160,6 +158,45 @@ mem_new: ( size -> $addr )
 
         $.currentBlock get _mem_Block~ + ret
 
+mem_free: ( $addr -> )
+    ${.block: [0]}
+
+    dup 0 = ?{drop ret}
+
+    _mem_Block~ - $.block set
+
+    "> free\n" _mem_debug
+
+    {$.block get get} {#_MEM_FLAG_USED 0xFFFFFFFF ^} & {$.block get} set
+
+    {$.block get} {$_mem_firstFreeBlock get} < ?{
+        "Set first free block\n" _mem_debug
+
+        {$.block get} $_mem_firstFreeBlock set
+    }
+
+    ${.currentBlock: [0]}
+    {{$.block get} _mem_Block~ + {$.block get get} +} $.currentBlock set
+
+    ( Merge together any subsequent free blocks )
+    .blockMergeLoop:
+        $.currentBlock get _mem_blockIsUsed ?{ret}
+
+        $.currentBlock get _mem_blockIsLast ?{
+            "Convert to last block\n" _mem_debug
+
+            0 {$.block get} set ( Make the penultimate block the last one instead )
+
+            ret
+        }
+
+        "Merge subsequent block\n" _mem_debug
+
+        {{$.block get get} {$.currentBlock get _mem_blockSize} + _mem_Block~ +} {$.block get} set
+        {{$.currentBlock get} {$.currentBlock get _mem_blockSize} + _mem_Block~ +} $.currentBlock set
+
+        $.blockMergeLoop jump
+
 mem_setHeapBase: ( $addr -> )
     $_mem_heapBase set ret
 
@@ -167,3 +204,4 @@ mem_setDebugger: ( $callback( $message -> ) -> )
     $_mem_debugger set ret
 
 new: mem_new ret
+free: mem_free ret
