@@ -36,6 +36,8 @@ char* opSymbols[] = {
 
 unsigned long* includedPaths = NULL;
 unsigned int includedPathsCount = 0;
+CachedIdentifier* firstCachedIdentifier = NULL;
+CachedIdentifier* lastCachedIdentifier = NULL;
 
 char* joinPaths(const char* base, const char* relative) {
     char* result = malloc(strlen(base) + strlen(relative) + 2);
@@ -164,7 +166,10 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
 
     unsigned int i = 0;
     unsigned char* code = *codePtr;
+    char* string = malloc(1);
     unsigned long hash = 5381;
+
+    string[0] = '\0';
 
     while (true) {
         if (!(
@@ -178,17 +183,50 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
 
         hash = (hash << 5) + hash + code[i];
 
+        string = realloc(string, i + 2);
+        string[i] = code[i];
+        string[i + 1] = '\0';
+
         i++;
     }
 
     if (i == 0) {
+        free(string);
+
         return false;
     }
 
     *codePtr += i;
     *result = hash;
 
+    if (!idHashToString(hash)) {
+        CachedIdentifier* cachedIdentifier = malloc(sizeof(CachedIdentifier));
+
+        cachedIdentifier->idHash = hash;
+        cachedIdentifier->string = string;
+        cachedIdentifier->next = NULL;
+
+        if (!firstCachedIdentifier) firstCachedIdentifier = cachedIdentifier;
+        if (lastCachedIdentifier) lastCachedIdentifier->next = cachedIdentifier;
+
+        lastCachedIdentifier = cachedIdentifier;
+    }
+
     return true;
+}
+
+char* idHashToString(unsigned long idHash) {
+    CachedIdentifier* currentCachedIdentifier = firstCachedIdentifier;
+
+    while (currentCachedIdentifier) {
+        if (currentCachedIdentifier->idHash == idHash) {
+            return currentCachedIdentifier->string;
+        }
+
+        currentCachedIdentifier = currentCachedIdentifier->next;
+    }
+
+    return NULL;
 }
 
 bool matchString(char** codePtr, char** resultPtr) {
@@ -635,23 +673,23 @@ void inspect(Token* token) {
             break;
 
         case TOK_DEFINE:
-            printf("def(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            printf("def(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
             break;
 
         case TOK_CALL:
-            printf("call(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            printf("call(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
             break;
 
         case TOK_CALL_COND:
-            printf("callif(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            printf("callif(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
             break;
 
         case TOK_ADDR:
-            printf("addr(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            printf("addr(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
             break;
 
         case TOK_ADDR_EXT:
-            printf("addrext(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asIdHash);
+            printf("addrext(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
             break;
 
         case TOK_RAW_OPEN:
@@ -679,7 +717,7 @@ void inspect(Token* token) {
             break;
 
         case TOK_SIZE_OF:
-            printf("sizeof(%s%ld) ", token->format == FMT_LOCAL ? "." : "", token->value.asInt);
+            printf("sizeof(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asInt));
             break;
 
         case TOK_SIZE_OF_EXT:
@@ -687,19 +725,19 @@ void inspect(Token* token) {
             break;
 
         case TOK_LOCAL_OFFSET:
-            printf("offset(.%ld) ", token->value.asIdHash);
+            printf("offset(.%s) ", idHashToString(token->value.asIdHash));
             break;
 
         case TOK_LOCAL_OFFSET_EXT:
-            printf("offsetext(%ld) ", token->value.asIdHash);
+            printf("offsetext(%s) ", idHashToString(token->value.asIdHash));
             break;
 
         case TOK_MACRO:
-            printf("macro(%ld) ", token->value.asIdHash);
+            printf("macro(%s) ", idHashToString(token->value.asIdHash));
             break;
 
         case TOK_MACRO_DEFINE:
-            printf("defmacro(%ld) ", token->value.asIdHash);
+            printf("defmacro(%s) ", idHashToString(token->value.asIdHash));
             break;
 
         default:

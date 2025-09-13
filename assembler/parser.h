@@ -58,10 +58,17 @@ typedef struct Token {
     struct Token* next;
 } Token;
 
+typedef struct CachedIdentifier {
+    unsigned long idHash;
+    char* string;
+    struct CachedIdentifier* next;
+} CachedIdentifier;
+
 bool matchChars(char** codePtr, char* match, bool whole);
 bool matchInList(char** codePtr, char* list[], unsigned int* index, bool whole);
 bool matchUInt(char** codePtr, int base, unsigned int* result);
 bool matchIdentifier(char** codePtr, unsigned long* result);
+char* idHashToString(unsigned long idHash);
 Format getFormatSuffix(char** codePtr);
 
 Token* parse(char* code, char* path);

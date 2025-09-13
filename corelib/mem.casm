@@ -166,7 +166,9 @@ mem_free: ( $addrPtr -> )
 
     "> free\n" _mem_debug
 
-    get ( Get referenced address from address pointer )
+    dup get ( Get referenced address from address pointer )
+    over 0 swap set ( Make address pointer's value null )
+    swap drop ( Drop address pointer itself )
 
     $_mem_firstFreeBlock get 0 = ?{ret}
     dup 0 = ?{drop ret}
@@ -268,13 +270,14 @@ mem_resize: ( size $addrPtr -> success' )
 
     dup 0 = ?{drop 0' ret}
 
-    ${.newAddr: [0]}
+    ${.newAddr: [0] .oldAddrPtr: [0]}
     $.newAddr set
+    $.addrPtr get $.oldAddrPtr set
 
     {$.addrPtr get get} {$.newAddr get} {$.block get _mem_blockSize} mem_copyBytes
     $.addrPtr mem_free
 
-    {$.newAddr get} {$.addrPtr get} set
+    {$.newAddr get} {$.oldAddrPtr get} set
     1' ret
 
 mem_setHeapBase: ( $addr -> )

@@ -90,7 +90,11 @@ void createLabel(unsigned long globalIdHash, unsigned long localIdHash) {
     label->pos = pos;
     label->next = NULL;
 
-    fprintf(stderr, "Created label (global: %ld, local: %ld)\n", globalIdHash, localIdHash);
+    if (localIdHash) {
+        fprintf(stderr, "Created label (%s.%s)\n", idHashToString(globalIdHash), idHashToString(localIdHash));
+    } else {
+        fprintf(stderr, "Created label (%s)\n", idHashToString(globalIdHash));
+    }
 
     if (!firstLabel) firstLabel = label;
     if (lastLabel) lastLabel->next = label;
@@ -205,7 +209,11 @@ Label* resolveLabel(unsigned long globalIdHash, unsigned long localIdHash) {
         label = label->next;
     }
 
-    fprintf(stderr, "Cannot resolve label (global: %ld, local: %ld)\n", globalIdHash, localIdHash);
+    if (localIdHash) {
+        fprintf(stderr, "Cannot resolve label (%s.%s)\n", idHashToString(globalIdHash), idHashToString(localIdHash));
+    } else {
+        fprintf(stderr, "Cannot resolve label (%s)\n", idHashToString(globalIdHash));
+    }
 
     return NULL;
 }

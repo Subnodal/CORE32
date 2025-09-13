@@ -67,13 +67,13 @@ start:
 
     "Resize A\n" print
 
-    32 $.objectA resize
+    32 $.objectA resize drop'
 
     .reportObjects
 
     "Resize C\n" print
 
-    16 $.objectC resize
+    16 $.objectC resize drop'
 
     .reportObjects
     ret
