@@ -215,7 +215,7 @@ void c32_step(CORE32* vm) {
         case C32_OP_AND: C32_BIT_OP(&)
 
         case C32_OP_NOT: {
-            c32_push(vm, C32_FMT_BYTE, c32_pop(vm, inst) == 0 ? 1 : 0);
+            c32_push(vm, inst, c32_pop(vm, inst) ^ 0xFF);
             break;
         }
 
@@ -278,7 +278,7 @@ void c32_step(CORE32* vm) {
         case C32_OP_CIF: case C32_OP_IF: {
             c32_Long p = C32_OFFSET(inst, c32_pop(vm, inst));
             c32_Byte cond = c32_pop(vm, C32_FMT_BYTE);
-            if (cond) {
+            if (cond & 1 == 1) {
                 if (inst & 0b11111000 == C32_OP_CIF) c32_pushCall(vm, vm->ip);
                 vm->ip = p;
             }

@@ -1,13 +1,28 @@
 start:
     ${.objectA: [0] .objectB: [0] .objectC: [0]}
 
-    ${.reportObjects:
+    ${.reportObject: ( $object $name -> )
+        {print ": " print}
+        {dup get printLongHex}
+
+        mem_getSize dup 0 != ?{
+            {" (size " print} {_mem_Block~ - printLong} {")" print}
+            1'
+        } !' ?{
+            " (null)" print
+        }
+
+        {'\n' printChar}
+        ret
+    }
+
+    ${.reportObjects: ( -> )
         "=== Object report ===\n" print
         {"Heap base: " print} {$_mem_heapBase get printLongHex} {'\n' printChar}
         {"First free block: " print} {$_mem_firstFreeBlock get printLongHex} {'\n' printChar}
-        {"Object A: " print} {$.objectA get printLongHex} {'\n' printChar}
-        {"Object B: " print} {$.objectB get printLongHex} {'\n' printChar}
-        {"Object C: " print} {$.objectC get printLongHex} {'\n' printChar}
+        $.objectA "Object A" .reportObject
+        $.objectB "Object B" .reportObject
+        $.objectC "Object C" .reportObject
         ret
     }
 
@@ -23,27 +38,44 @@ start:
 
     "Free object A and create object C\n" print
 
-    $.objectA get free
+    $.objectA free
     32 new $.objectC set
 
     .reportObjects
 
     "Free object B, then recreate objects A and B in reverse order\n" print
 
-    $.objectB get free
+    $.objectB free
     16 new $.objectB set
     16 new $.objectA set
 
     .reportObjects
 
-    "Free objects A and C, then create A where C was\n" print
+    "Free objects B and C, then create B where C was\n" print
 
-    $.objectA get free
-    $.objectC get free
-    32 new $.objectA set
+    $.objectB free
+    $.objectC free
+    32 new $.objectB set
 
     .reportObjects
 
+    "Recreate C\n" print
+
+    32 new $.objectC set
+
+    .reportObjects
+
+    "Resize A\n" print
+
+    32 $.objectA resize
+
+    .reportObjects
+
+    "Resize C\n" print
+
+    16 $.objectC resize
+
+    .reportObjects
     ret
 
 +io.casm

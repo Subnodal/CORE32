@@ -1,6 +1,7 @@
 #_MEM_ALIGN_SIZE: 4
 #_MEM_FLAG_USED: 0x80000000
 
+
 _mem_heapBase: [0]
 _mem_firstFreeBlock: [0]
 _mem_debugger: [$_mem_defaultDebugger]
@@ -28,7 +29,7 @@ _mem_debug: ( $message -> )
 mem_init: ( -> )
     $_mem_heapBase get 0 = ?{
         ( Get heap base from code end interrupt if not explicitly set )
-        'e' int' $_mem_heapBase set
+        'e' int' _mem_align $_mem_heapBase set
     }
 
     $_mem_firstFreeBlock get 0 = ?{
@@ -42,11 +43,12 @@ mem_new: ( size -> $addr )
 
     "> new\n" _mem_debug
 
-    $_mem_firstFreeBlock get 0 = ?{0 ret}
+    $_mem_firstFreeBlock get 0 = ?{drop 0 ret}
 
     _mem_align $.size set
     $_mem_firstFreeBlock get $.currentBlock set
 
+    $.size get 0 = ?{#_MEM_ALIGN_SIZE $.size set}
     $.size get #_MEM_FLAG_USED & 0 != ?{0 ret}
 
     .blockSearchLoop:
@@ -114,7 +116,8 @@ mem_new: ( size -> $addr )
                 $.totalUsableSize get $.originalBlockSize set
 
                 0 {{$.currentBlock get} _mem_Block~ + {$.size get} +} set ( Create a new last block after this one )
-            } ! ?{
+                {$.size get} {$.currentBlock get} set ( Set this block's size )
+            } !' ?{
                 $.totalUsableSize get {$.originalBlock get} set
 
                 {$.totalUsableSize get} {$.size get _mem_Block~ +} < ?{
@@ -158,14 +161,17 @@ mem_new: ( size -> $addr )
 
         $.currentBlock get _mem_Block~ + ret
 
-mem_free: ( $addr -> )
+mem_free: ( $addrPtr -> )
     ${.block: [0]}
 
+    "> free\n" _mem_debug
+
+    get ( Get referenced address from address pointer )
+
+    $_mem_firstFreeBlock get 0 = ?{ret}
     dup 0 = ?{drop ret}
 
     _mem_Block~ - $.block set
-
-    "> free\n" _mem_debug
 
     {$.block get get} {#_MEM_FLAG_USED 0xFFFFFFFF ^} & {$.block get} set
 
@@ -197,11 +203,105 @@ mem_free: ( $addr -> )
 
         $.blockMergeLoop jump
 
+mem_resize: ( size $addrPtr -> success' )
+    ${.addrPtr: [0] .block: [0] .size: [0]}
+
+    "> resize\n" _mem_debug
+
+    $_mem_firstFreeBlock get 0 = ?{drop drop 0 ret}
+
+    swap _mem_align $.size set
+
+    dup get 0 = ?{
+        {$.size get} mem_new
+        0 = ?{drop 0' ret}
+        swap get set
+        1' ret
+    }
+
+    dup $.addrPtr set
+    get _mem_Block~ - $.block set
+
+    $.size get 0 = ?{#_MEM_ALIGN_SIZE $.size set}
+    $.size get #_MEM_FLAG_USED & 0 != ?{0 ret}
+
+    {$.size get} {$.block get _mem_blockSize} = ?{
+        "Equal size\n" _mem_debug
+        1' ret
+    }
+
+    {$.block get} _mem_Block~ + {$.block get _mem_blockSize} + _mem_blockIsLast ?{
+        ( Modify last block to match new size )
+
+        "Modify last block\n" _mem_debug
+
+        {{$.block get} _mem_Block~ + {$.block get _mem_blockSize} +} {$_mem_firstFreeBlock get} = ?{
+            ( Push pointer to first free block further down if it currently lies in the extended space )
+
+            "  Increase first free block\n" _mem_debug
+
+            {$.block get} _mem_Block~ + {$.size get} + $_mem_firstFreeBlock set
+        }
+
+        {$.size get #_MEM_FLAG_USED |} {$.block get} set
+        0 {{$.block get} _mem_Block~ + {$.size get} +} set
+
+        1' ret
+    }
+
+    {$.size get _mem_Block~ +} {$.block get _mem_blockSize} < ?{
+        ( Truncate current block by splitting truncated portion off into new block )
+
+        "Truncate block\n" _mem_debug
+
+        {{$.block get _mem_blockSize} {$.size get} - _mem_Block~ -} {{$.block get} _mem_Block~ + {$.size get} +} set   
+        {$.size get #_MEM_FLAG_USED |} {$.block get} set
+
+        1' ret
+    }
+
+    ( Perform full reallocation )
+
+    "Fully reallocate\n" _mem_debug
+
+    $.size get mem_new
+
+    dup 0 = ?{drop 0' ret}
+
+    ${.newAddr: [0]}
+    $.newAddr set
+
+    {$.addrPtr get get} {$.newAddr get} {$.block get _mem_blockSize} mem_copyBytes
+    $.addrPtr mem_free
+
+    {$.newAddr get} {$.addrPtr get} set
+    1' ret
+
 mem_setHeapBase: ( $addr -> )
     $_mem_heapBase set ret
+
+mem_getSize: ( $addrPtr -> )
+    get
+    dup 0 = ?{0 ret}
+    _mem_Block~ - _mem_blockSize _mem_Block~ + ret
+
+mem_copyBytes: ( $source $destination size -> )
+    ${.destination: [0] .source: [0]}
+
+    swap $.destination set
+    swap $.source set
+
+    .loop:
+        dup 0 = ?{drop ret}
+
+        {dup {$.source get} + get} {over {$.destination get} +} set
+
+        --
+        $.loop jump
 
 mem_setDebugger: ( $callback( $message -> ) -> )
     $_mem_debugger set ret
 
 new: mem_new ret
 free: mem_free ret
+resize: mem_resize ret
