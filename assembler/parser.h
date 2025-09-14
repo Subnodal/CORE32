@@ -64,6 +64,8 @@ typedef struct CachedIdentifier {
     struct CachedIdentifier* next;
 } CachedIdentifier;
 
+extern bool showDebugMessages;
+
 bool matchChars(char** codePtr, char* match, bool whole);
 bool matchInList(char** codePtr, char* list[], unsigned int* index, bool whole);
 bool matchUInt(char** codePtr, int base, unsigned int* result);

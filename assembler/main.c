@@ -39,6 +39,11 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
+        if (strcmp(argv[i], "--debug") == 0) {
+            showDebugMessages = true;
+            continue;
+        }
+
         if (argState == ARG_STATE_INFILE) {
             infile = argv[i];
             argState = ARG_STATE_NONE;
@@ -70,7 +75,7 @@ int main(int argc, char* argv[]) {
 
     free(data);
 
-    inspect(firstToken);
+    if (showDebugMessages) inspect(firstToken);
 
     char* output;
     unsigned long length;

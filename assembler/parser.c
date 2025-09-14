@@ -34,6 +34,7 @@ char* opSymbols[] = {
     NULL
 };
 
+bool showDebugMessages = false;
 unsigned long* includedPaths = NULL;
 unsigned int includedPathsCount = 0;
 CachedIdentifier* firstCachedIdentifier = NULL;

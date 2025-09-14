@@ -33,7 +33,7 @@ void grow() {
     if (oldLength / BLOCK_SIZE < length / BLOCK_SIZE) {
         unsigned long baseLength = (length / BLOCK_SIZE) * BLOCK_SIZE;
 
-        printf("Growing from 0x%08x\n", baseLength);
+        if (showDebugMessages) printf("Growing from 0x%08x\n", baseLength);
 
         output = realloc(output, baseLength + BLOCK_SIZE);
 
@@ -90,10 +90,12 @@ void createLabel(unsigned long globalIdHash, unsigned long localIdHash) {
     label->pos = pos;
     label->next = NULL;
 
-    if (localIdHash) {
-        fprintf(stderr, "Created label (%s.%s)\n", idHashToString(globalIdHash), idHashToString(localIdHash));
-    } else {
-        fprintf(stderr, "Created label (%s)\n", idHashToString(globalIdHash));
+    if (showDebugMessages) {
+        if (localIdHash) {
+            fprintf(stderr, "Created label: %s.%s\n", idHashToString(globalIdHash), idHashToString(localIdHash));
+        } else {
+            fprintf(stderr, "Created label: %s\n", idHashToString(globalIdHash));
+        }
     }
 
     if (!firstLabel) firstLabel = label;
@@ -120,7 +122,7 @@ void createReference(Token* token, unsigned long globalIdHash) {
 void pushGroupLevel(Token* token) {
     GroupLevel* groupLevel = malloc(sizeof(GroupLevel));
 
-    printf("Open group %c\n", token->value.asGroupType);
+    if (showDebugMessages) printf("Open group %c\n", token->value.asGroupType);
     
     groupLevel->pos = pos;
     groupLevel->token = token;
@@ -210,9 +212,9 @@ Label* resolveLabel(unsigned long globalIdHash, unsigned long localIdHash) {
     }
 
     if (localIdHash) {
-        fprintf(stderr, "Cannot resolve label (%s.%s)\n", idHashToString(globalIdHash), idHashToString(localIdHash));
+        fprintf(stderr, "Cannot resolve label: %s.%s\n", idHashToString(globalIdHash), idHashToString(localIdHash));
     } else {
-        fprintf(stderr, "Cannot resolve label (%s)\n", idHashToString(globalIdHash));
+        fprintf(stderr, "Cannot resolve label: %s\n", idHashToString(globalIdHash));
     }
 
     return NULL;
@@ -336,7 +338,7 @@ void resolveGroupLevel() {
         pos++; // Offset by another byte due to `not` op
     }
 
-    printf("Resolve group close to address 0x%08x\n", pos);
+    if (showDebugMessages) printf("Resolve group close to address 0x%08x\n", pos);
 
     if (groupType == GROUP_QUOTED) {
         // Offset pos by 11 to skip over `put` + long + `put` + long + `jump`
