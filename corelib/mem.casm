@@ -1,7 +1,6 @@
 #_MEM_ALIGN_SIZE: 4
 #_MEM_FLAG_USED: 0x80000000
 
-
 _mem_heapBase: [0]
 _mem_firstFreeBlock: [0]
 _mem_debugger: [$_mem_defaultDebugger]
