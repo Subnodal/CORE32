@@ -79,12 +79,16 @@ readTest:
         ret
     }
 
+    ${.buffer: [0]}
+
     #FILE_TO_END {$fd get} file_read dup 0 = ?{
         "Failed to read into buffer\n" print
         ret
-    }
+    } $.buffer set
 
-    {"Read entire file: " print} {print} {"\n" print}
+    {"Read entire file: " print} {$.buffer get print} {"\n" print}
+
+    $.buffer free
 
     {$fd get} file_close
 

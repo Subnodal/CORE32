@@ -40,9 +40,9 @@ mem_init: ( -> )
 mem_new: ( size -> $addr )
     ${.size: [0] .currentBlock: [0]}
 
-    mem_init
-
     "> new\n" _mem_debug
+
+    mem_init
 
     $_mem_firstFreeBlock get 0 = ?{drop 0 ret}
 
