@@ -40,6 +40,8 @@ mem_init: ( -> )
 mem_new: ( size -> $addr )
     ${.size: [0] .currentBlock: [0]}
 
+    mem_init
+
     "> new\n" _mem_debug
 
     $_mem_firstFreeBlock get 0 = ?{drop 0 ret}
@@ -164,6 +166,8 @@ mem_free: ( $addrPtr -> )
     ${.block: [0]}
 
     "> free\n" _mem_debug
+    
+    mem_init
 
     dup get ( Get referenced address from address pointer )
     over 0 swap set ( Make address pointer's value null )
@@ -208,6 +212,8 @@ mem_resize: ( size $addrPtr -> success' )
     ${.addrPtr: [0] .block: [0] .size: [0]}
 
     "> resize\n" _mem_debug
+
+    mem_init
 
     $_mem_firstFreeBlock get 0 = ?{drop drop 0 ret}
 

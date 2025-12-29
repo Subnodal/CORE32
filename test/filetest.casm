@@ -1,0 +1,96 @@
+start:
+    writeTest readTest ret
+
++io.casm
++file.casm
+
+fd: [0]
+
+writeTest:
+    "File write test\n" print
+
+    "test/writetest.txt" #FILE_WRITE #FILE_CREATE | file_open !' ?{
+        "Failed to open file\n" print
+        ret
+    }
+
+    $fd set
+
+    {"File opened with fd " print} {$fd get printLong} {"\n" print}
+
+    'A' {$fd get} file_writeChar !' ?{
+        "Failed to write to file\n" print
+        ret
+    }
+
+    'B' {$fd get} file_writeChar !' ?{
+        "Failed to write to file\n" print
+        ret
+    }
+
+    "test" 4 {$fd get} file_write !' ?{
+        "Failed to write buffer to file\n" print
+        ret
+    }
+
+    {$fd get} file_becomeWriter
+
+    " This is a test! " print
+    123 printLong
+
+    file_releaseWriter
+
+    {$fd get} file_close
+
+    "File closed\n" print
+
+    ret
+
+readTest:
+    "File read test\n" print
+
+    "test/writetest.txt" #FILE_READ file_open !' ?{
+        "Failed to open file\n" print
+        ret
+    }
+
+    $fd set
+
+    {"File opened with fd " print} {$fd get printLong} {"\n" print}
+    {"File size: " print} {$fd get file_size printLong} {"\n" print}
+
+    5 {$fd get} file_seek !' ?{
+        "Failed to seek\n" print
+        ret
+    }
+
+    {"Seeked to pos: " print} {$fd get file_tell printLong} {"\n" print}
+
+    ({"Stream char available? " print} {$fd get file_available from' to printLong} {"\n" print})
+
+    {$fd get} file_readChar !' ?{
+        "Failed to read\n" print
+        ret
+    }
+
+    {"Char read: " print} {printChar} {"\n" print}
+
+    0 {$fd get} file_seek !' ?{
+        "Failed to seek\n" print
+        ret
+    }
+
+    #FILE_TO_END {$fd get} file_read
+
+    dup 0 = ?{
+        "Failed to read into buffer\n" print
+        ret
+    }
+
+    {"Read entire file: " print} {print} {"\n" print}
+
+    {$fd get} file_close
+
+    "File closed\n" print
+
+    ret

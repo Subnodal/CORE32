@@ -1,0 +1,136 @@
+#FILE_READ:         0x01
+#FILE_WRITE:        0x02
+#FILE_READ_WRITE:   0x03 ( Read and write )
+#FILE_APPEND:       0x04
+#FILE_CREATE:       0x08
+#FILE_TRUNCATE:     0x10
+#FILE_TO_END:       {0 1 -}
+
+_file_hadWriterErrors: [0']
+
+file_open: ( $path mode -> fd success' )
+    [put "fOPN"] int ret
+
+file_close: ( fd -> )
+    [put "fCLS"] int ret
+
+file_size: ( fd -> size )
+    [put "fSIZ"] int ret
+
+file_seek: ( pos fd -> success' )
+    [put "fSEK"] int ret
+
+file_tell: ( fd -> pos )
+    [put "fTEL"] int ret
+
+file_available: ( fd -> available' )
+    [put "fAVL"] int ret
+
+file_readChar: ( fd -> char' success' )
+    [put "fRDC"] int ret
+
+file_read: ( count fd -> $data )
+    ${.fd: [0]}
+
+    dup $.fd set    ( count fd )
+    dup file_size   ( count fd size )
+    swap            ( count size fd )
+    file_tell       ( count size pos )
+    -               ( count remainingSize )
+    swap            ( remainingSize count )
+    over over       ( remainingSize count remainingSize count )
+
+    < ?{            ( remainingSize count )
+        ( Constrain count to max remaining size )
+        drop dup    ( remainingSize remainingSize )
+    }
+
+    dup mem_new     ( cappedCount $buffer )
+
+    dup 0 = ?{
+        ( Cannot allocate memory to hold buffer )
+        swap drop ret
+    }
+
+    swap            ( $buffer cappedCount )
+    over            ( $buffer cappedCount $writePos )
+    swap            ( $buffer $writePos cappedCount )
+
+    .loop:
+        dup 0 = ?{                  ( $buffer $writePos cappedCount )
+            ( Finished reading bytes )
+            drop drop ret   ( $buffer )
+        }
+
+        swap                        ( $buffer cappedCount $writePos )
+        dup                         ( $buffer cappedCount $writePos $writePos )
+        {$.fd get} file_readChar    ( $buffer cappedCount $writePos $writePos char' success' )
+
+        !' ?{                       ( $buffer cappedCount $writePos $writePos char' )
+            ( Unsuccessful read, return null address )
+            drop' drop drop drop drop
+            0 ret
+        }
+
+        dup' dup"   ( $buffer cappedCount $writePos $writePos char )
+        swap        ( $buffer cappedCount $writePos char $writePos )
+        set'        ( $buffer cappedCount $writePos "' )
+        drop' drop" ( $buffer cappedCount $writePos )
+
+        ++          ( $buffer cappedCount $writePos )
+        swap --     ( $buffer $writePos cappedCount )
+
+
+        $.loop jump
+
+file_writeChar: ( char' fd -> success' )
+    [put "fWRC"] int ret
+
+file_write: ( $buffer count fd -> success' )
+    ${.fd: [0]}
+
+    $.fd set            ( $readPos count )
+
+    .loop:
+        dup 0 = ?{      ( $readPos count )
+            ( Finished writing bytes )
+            drop drop 1' ret
+        }
+
+        swap            ( count $readPos )
+        dup             ( count $readPos $readPos )
+        get'            ( count $readPos char' )
+        $.fd get        ( count $readPos char' fd )
+        file_writeChar  ( count $readPos success' )
+
+        !' ?{           ( count $readPos )
+            ( Unsuccessful write, return failure )
+            drop drop drop
+            0' ret
+        }
+
+        ++              ( count $readPos )
+        swap --         ( $readPos count )
+
+        $.loop jump
+
+file_becomeWriter: ( fd -> )
+    ${.fd: [0]}
+
+    $.fd set
+    0' $_file_hadWriterErrors set'
+    $.writer io_setWriter
+    ret
+
+    .writer:
+        $.fd get
+        file_writeChar
+        !' ?{1' $_file_hadWriterErrors set}
+        ret
+
+file_releaseWriter: ( -> success' )
+    io_unsetWriter
+    $_file_hadWriterErrors get !' ret
+
++io.casm
++mem.casm

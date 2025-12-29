@@ -27,7 +27,6 @@ start:
     }
 
     $io_print mem_setDebugger
-    mem_init
 
     "Memory allocation test\n" print
 

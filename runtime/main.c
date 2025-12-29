@@ -2,6 +2,7 @@
 
 #include "core32.h"
 #include "handlers.h"
+#include "handlers-posix.h"
 
 CORE32* vm;
 
@@ -59,6 +60,7 @@ int main(int argc, char* argv[]) {
     }
 
     c32_registerBaseHandlers(vm);
+    c32_registerPosixHandlers(vm);
 
     while (vm->running) {
         c32_step(vm);

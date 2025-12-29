@@ -1,5 +1,10 @@
-io_printChar: ( char' -> )
+_io_writer: [$_io_write]
+
+_io_write: ( char' -> )
     'o' int' ret
+
+io_printChar: ( char' -> )
+    $_io_writer get call ret
 
 io_print: ( $string -> )
     .loop:
@@ -50,6 +55,12 @@ io_printLongHex: ( long -> )
     io_printByteHex
     io_printByteHex
     ret
+
+io_setWriter: ( $callback( char' -> ) -> )
+    $_io_writer set ret
+
+io_unsetWriter: ( -> )
+    $_io_write io_setWriter ret
 
 print: io_print ret
 printChar: io_printChar ret

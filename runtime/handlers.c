@@ -12,15 +12,29 @@
 
 c32_Long c32_id(c32_Byte* name) {
     c32_Long id = 0;
+    c32_Byte length = 0;
 
     while (*name) {
-        id <<= 8;
-        id |= *name;
+        id >>= 8;
+        id |= (*name << 24);
  
         name++;
+        length++;
+    }
+
+    if (length < 4) {
+        id >>= (4 - length) * 8;
     }
 
     return id;
+}
+
+c32_Byte* c32_safeGetBytes(CORE32* vm, c32_Long address) {
+    if (address >= vm->memSize) {
+        return NULL;
+    }
+
+    return (c32_Byte*)(vm->mem + address);
 }
 
 void c32_outputByte(CORE32* vm) {
