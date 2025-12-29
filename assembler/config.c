@@ -1,11 +1,11 @@
 #include "config.h"
 
 #ifndef C32_ASM_RECONFIG_FS
-    void getSelfPath(char selfPath[C32_ASM_PATH_MAX]) {
+    void c32_getSelfPath(char selfPath[C32_ASM_PATH_MAX]) {
         readlink("/proc/self/exe", selfPath, C32_ASM_PATH_MAX);
     }
 
-    bool readFile(char* path, char** dataPtr, size_t* sizePtr) {
+    bool c32_readFile(char* path, char** dataPtr, size_t* sizePtr) {
         FILE* fp = fopen(path, "r");
 
         if (!fp) {
@@ -33,7 +33,7 @@
         return true;
     }
 
-    bool writeFile(char* path, char* data, size_t size) {
+    bool c32_writeFile(char* path, char* data, size_t size) {
         FILE* fp = fopen(path, "w");
 
         if (!fp) {

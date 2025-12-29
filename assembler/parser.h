@@ -4,49 +4,49 @@
 #include <stdbool.h>
 
 typedef enum {
-    TOK_ERROR,
-    TOK_OP,
-    TOK_INT,
-    TOK_STRING,
-    TOK_DEFINE,
-    TOK_CALL,
-    TOK_CALL_COND,
-    TOK_ADDR,
-    TOK_ADDR_EXT,
-    TOK_SIZE_OF,
-    TOK_SIZE_OF_EXT,
-    TOK_RAW_OPEN,
-    TOK_RAW_CLOSE,
-    TOK_GROUP_OPEN,
-    TOK_GROUP_CLOSE,
-    TOK_POS_ABS,
-    TOK_POS_OFFSET,
-    TOK_SIZE_OF_OFFSET,
-    TOK_SIZE_OF_OFFSET_EXT,
-    TOK_LOCAL_OFFSET,
-    TOK_LOCAL_OFFSET_EXT,
-    TOK_MACRO,
-    TOK_MACRO_DEFINE
-} TokenType;
+    C32_TOK_ERROR,
+    C32_TOK_OP,
+    C32_TOK_INT,
+    C32_TOK_STRING,
+    C32_TOK_DEFINE,
+    C32_TOK_CALL,
+    C32_TOK_CALL_COND,
+    C32_TOK_ADDR,
+    C32_TOK_ADDR_EXT,
+    C32_TOK_SIZE_OF,
+    C32_TOK_SIZE_OF_EXT,
+    C32_TOK_RAW_OPEN,
+    C32_TOK_RAW_CLOSE,
+    C32_TOK_C32_GROUP_OPEN,
+    C32_TOK_C32_GROUP_CLOSE,
+    C32_TOK_POS_ABS,
+    C32_TOK_POS_OFFSET,
+    C32_TOK_SIZE_OF_OFFSET,
+    C32_TOK_SIZE_OF_OFFSET_EXT,
+    C32_TOK_LOCAL_OFFSET,
+    C32_TOK_LOCAL_OFFSET_EXT,
+    C32_TOK_MACRO,
+    C32_TOK_MACRO_DEFINE
+} c32_TokenType;
 
 typedef enum {
-    GROUP_STD = '.',
-    GROUP_COND = '?',
-    GROUP_QUOTED = ':',
-    GROUP_SKIPPED = '$'
+    C32_GROUP_STD = '.',
+    C32_GROUP_COND = '?',
+    C32_GROUP_QUOTED = ':',
+    C32_GROUP_SKIPPED = '$'
 } GroupType;
 
 typedef enum {
-    FMT_BYTE = 0b00,
-    FMT_SHORT = 0b01,
-    FMT_LONG = 0b10,
-    FMT_FLOAT = 0b11,
-    FMT_GLOBAL = 0b00,
-    FMT_LOCAL = 0b01
+    C32_FMT_BYTE = 0b00,
+    C32_FMT_SHORT = 0b01,
+    C32_FMT_LONG = 0b10,
+    C32_FMT_FLOAT = 0b11,
+    C32_FMT_GLOBAL = 0b00,
+    C32_FMT_LOCAL = 0b01
 } Format;
 
-typedef struct Token {
-    TokenType type;
+typedef struct c32_Token {
+    c32_TokenType type;
     union {
         unsigned long asInt;
         char* asString;
@@ -55,25 +55,25 @@ typedef struct Token {
         GroupType asGroupType;
     } value;
     Format format;
-    struct Token* next;
-} Token;
+    struct c32_Token* next;
+} c32_Token;
 
-typedef struct CachedIdentifier {
+typedef struct c32_CachedIdentifier {
     unsigned long idHash;
     char* string;
-    struct CachedIdentifier* next;
-} CachedIdentifier;
+    struct c32_CachedIdentifier* next;
+} c32_CachedIdentifier;
 
-extern bool showDebugMessages;
+extern bool c32_showDebugMessages;
 
-bool matchChars(char** codePtr, char* match, bool whole);
-bool matchInList(char** codePtr, char* list[], unsigned int* index, bool whole);
-bool matchUInt(char** codePtr, int base, unsigned int* result);
-bool matchIdentifier(char** codePtr, unsigned long* result);
-char* idHashToString(unsigned long idHash);
-Format getFormatSuffix(char** codePtr);
+bool c32_matchChars(char** codePtr, char* match, bool whole);
+bool c32_matchInList(char** codePtr, char* list[], unsigned int* index, bool whole);
+bool c32_matchUInt(char** codePtr, int base, unsigned int* result);
+bool c32_matchIdentifier(char** codePtr, unsigned long* result);
+char* c32_idHashToString(unsigned long idHash);
+Format c32_getFormatSuffix(char** codePtr);
 
-Token* parse(char* code, char* path);
-void inspect(Token* token);
+c32_Token* c32_parse(char* code, char* path);
+void c32_inspect(c32_Token* token);
 
 #endif

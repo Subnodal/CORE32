@@ -6,17 +6,17 @@ const char WIDTHS[4] = {1, 2, 4, 4};
 char* output;
 unsigned long pos;
 unsigned long length;
-Label* firstLabel;
-Label* lastLabel;
-Reference* firstReference;
-Reference* lastReference;
+c32_Label* firstLabel;
+c32_Label* lastLabel;
+c32_Reference* firstReference;
+c32_Reference* lastReference;
 unsigned int referenceCount;
-GroupLevel* firstGroupLevel;
-GroupLevel* lastGroupLevel;
-Macro* firstMacro;
-Macro* lastMacro;
-MacroLevel* firstMacroLevel;
-MacroLevel* lastMacroLevel;
+c32_GroupLevel* firstGroupLevel;
+c32_GroupLevel* lastGroupLevel;
+c32_Macro* firstMacro;
+c32_Macro* lastMacro;
+c32_MacroLevel* firstMacroLevel;
+c32_MacroLevel* lastMacroLevel;
 unsigned int macroLevelCount;
 
 void grow() {
@@ -28,14 +28,14 @@ void grow() {
 
     length = pos;
 
-    if (oldLength / BLOCK_SIZE < length / BLOCK_SIZE) {
-        unsigned long baseLength = (length / BLOCK_SIZE) * BLOCK_SIZE;
+    if (oldLength / C32_BLOCK_SIZE < length / C32_BLOCK_SIZE) {
+        unsigned long baseLength = (length / C32_BLOCK_SIZE) * C32_BLOCK_SIZE;
 
-        if (showDebugMessages) C32_ASM_PRINTF("Growing from 0x%08x\n", baseLength);
+        if (c32_showDebugMessages) C32_ASM_PRINTF("Growing from 0x%08x\n", baseLength);
 
-        output = (char*)C32_ASM_REALLOC(output, baseLength + BLOCK_SIZE);
+        output = (char*)C32_ASM_REALLOC(output, baseLength + C32_BLOCK_SIZE);
 
-        for (unsigned int i = oldLength + 1; i < baseLength + BLOCK_SIZE; i++) {
+        for (unsigned int i = oldLength + 1; i < baseLength + C32_BLOCK_SIZE; i++) {
             output[i] = '\0';
         }
     }
@@ -48,7 +48,7 @@ void outputB(char byte) {
 void outputW(unsigned long value, Format format) {
     char width = WIDTHS[format];
 
-    if (format == FMT_FLOAT) value = ((LongOrFloat) {.asFloat = value}).asLong;
+    if (format == C32_FMT_FLOAT) value = ((c32_LongOrFloat) {.asFloat = value}).asLong;
 
     outputB(value & 0x000000FF);
     if (width >= 2) outputB((value & 0x0000FF00) >> 8);
@@ -63,36 +63,36 @@ void outputChars(char* chars, unsigned int length) {
 }
 
 Format getShortestFormat(unsigned long value) {
-    Format format = FMT_LONG;
+    Format format = C32_FMT_LONG;
 
-    if (value <= 0xFFFF) format = FMT_SHORT;
-    if (value <= 0xFF) format = FMT_BYTE;
+    if (value <= 0xFFFF) format = C32_FMT_SHORT;
+    if (value <= 0xFF) format = C32_FMT_BYTE;
 
     return format;
 }
 
 char getFormatLength(Format format) {
     switch (format) {
-        case FMT_BYTE: return 1;
-        case FMT_SHORT: return 2;
-        case FMT_LONG: case FMT_FLOAT: return 4;
+        case C32_FMT_BYTE: return 1;
+        case C32_FMT_SHORT: return 2;
+        case C32_FMT_LONG: case C32_FMT_FLOAT: return 4;
         default: return 0;
     }
 }
 
 void createLabel(unsigned long globalIdHash, unsigned long localIdHash) {
-    Label* label = (Label*)C32_ASM_MALLOC(sizeof(Label));
+    c32_Label* label = (c32_Label*)C32_ASM_MALLOC(sizeof(c32_Label));
 
     label->globalIdHash = globalIdHash;
     label->localIdHash = localIdHash;
     label->pos = pos;
     label->next = C32_ASM_NULL;
 
-    if (showDebugMessages) {
+    if (c32_showDebugMessages) {
         if (localIdHash) {
-            C32_ASM_PRINTF_STDERR("Created label: %s.%s\n", idHashToString(globalIdHash), idHashToString(localIdHash));
+            C32_ASM_PRINTF_STDERR("Created label: %s.%s\n", c32_idHashToString(globalIdHash), c32_idHashToString(localIdHash));
         } else {
-            C32_ASM_PRINTF_STDERR("Created label: %s\n", idHashToString(globalIdHash));
+            C32_ASM_PRINTF_STDERR("Created label: %s\n", c32_idHashToString(globalIdHash));
         }
     }
 
@@ -102,8 +102,8 @@ void createLabel(unsigned long globalIdHash, unsigned long localIdHash) {
     lastLabel = label;
 }
 
-void createReference(Token* token, unsigned long globalIdHash) {
-    Reference* reference = (Reference*)C32_ASM_MALLOC(sizeof(Reference));
+void createReference(c32_Token* token, unsigned long globalIdHash) {
+    c32_Reference* reference = (c32_Reference*)C32_ASM_MALLOC(sizeof(c32_Reference));
 
     reference->pos = pos;
     reference->token = token;
@@ -117,10 +117,10 @@ void createReference(Token* token, unsigned long globalIdHash) {
     referenceCount++;
 }
 
-void pushGroupLevel(Token* token) {
-    GroupLevel* groupLevel = (GroupLevel*)C32_ASM_MALLOC(sizeof(GroupLevel));
+void pushGroupLevel(c32_Token* token) {
+    c32_GroupLevel* groupLevel = (c32_GroupLevel*)C32_ASM_MALLOC(sizeof(c32_GroupLevel));
 
-    if (showDebugMessages) C32_ASM_PRINTF("Open group %c\n", token->value.asGroupType);
+    if (c32_showDebugMessages) C32_ASM_PRINTF("Open group %c\n", token->value.asGroupType);
     
     groupLevel->pos = pos;
     groupLevel->token = token;
@@ -133,7 +133,7 @@ void pushGroupLevel(Token* token) {
     lastGroupLevel = groupLevel;
 }
 
-bool popGroupLevel(GroupLevel* groupLevel) {
+bool popGroupLevel(c32_GroupLevel* groupLevel) {
     if (!lastGroupLevel) {
         return false;
     }
@@ -151,8 +151,8 @@ bool popGroupLevel(GroupLevel* groupLevel) {
     return true;
 }
 
-void createMacro(unsigned long idHash, Token* firstToken) {
-    Macro* macro = (Macro*)C32_ASM_MALLOC(sizeof(Macro));
+void createMacro(unsigned long idHash, c32_Token* firstToken) {
+    c32_Macro* macro = (c32_Macro*)C32_ASM_MALLOC(sizeof(c32_Macro));
 
     macro->idHash = idHash;
     macro->firstToken = firstToken;
@@ -164,10 +164,10 @@ void createMacro(unsigned long idHash, Token* firstToken) {
     lastMacro = macro;
 }
 
-void pushMacroLevel(Token* continueToken) {
-    MacroLevel* macroLevel = (MacroLevel*)C32_ASM_MALLOC(sizeof(MacroLevel));
+void pushMacroLevel(c32_Token* continuec32_Token) {
+    c32_MacroLevel* macroLevel = (c32_MacroLevel*)C32_ASM_MALLOC(sizeof(c32_MacroLevel));
     
-    macroLevel->continueToken = continueToken;
+    macroLevel->continuec32_Token = continuec32_Token;
     macroLevel->baseGroupLevel = lastGroupLevel;
     macroLevel->prev = lastMacroLevel;
     macroLevel->next = C32_ASM_NULL;
@@ -179,7 +179,7 @@ void pushMacroLevel(Token* continueToken) {
     macroLevelCount++;
 }
 
-bool popMacroLevel(MacroLevel* macroLevel) {
+bool popMacroLevel(c32_MacroLevel* macroLevel) {
     if (!lastMacroLevel) {
         return false;
     }
@@ -198,8 +198,8 @@ bool popMacroLevel(MacroLevel* macroLevel) {
     return true;
 }
 
-Label* resolveLabel(unsigned long globalIdHash, unsigned long localIdHash) {
-    Label* label = firstLabel;
+c32_Label* resolveLabel(unsigned long globalIdHash, unsigned long localIdHash) {
+    c32_Label* label = firstLabel;
 
     while (label) {
         if (label->globalIdHash == globalIdHash && label->localIdHash == localIdHash) {
@@ -210,82 +210,82 @@ Label* resolveLabel(unsigned long globalIdHash, unsigned long localIdHash) {
     }
 
     if (localIdHash) {
-        C32_ASM_PRINTF_STDERR("Cannot resolve label: %s.%s\n", idHashToString(globalIdHash), idHashToString(localIdHash));
+        C32_ASM_PRINTF_STDERR("Cannot resolve label: %s.%s\n", c32_idHashToString(globalIdHash), c32_idHashToString(localIdHash));
     } else {
-        C32_ASM_PRINTF_STDERR("Cannot resolve label: %s\n", idHashToString(globalIdHash));
+        C32_ASM_PRINTF_STDERR("Cannot resolve label: %s\n", c32_idHashToString(globalIdHash));
     }
 
     return C32_ASM_NULL;
 }
 
 void setLabelSize(unsigned long globalIdHash, unsigned long localIdHash, unsigned long size) {
-    Label* label = resolveLabel(globalIdHash, localIdHash);
+    c32_Label* label = resolveLabel(globalIdHash, localIdHash);
 
     if (label) label->size = size;
 }
 
 void resolveReferences() {
-    Reference* reference = firstReference;
+    c32_Reference* reference = firstReference;
 
     while (reference) {
         pos = reference->pos;
 
-        Token* token = reference->token;
+        c32_Token* token = reference->token;
 
         switch (token->type) {
-            case TOK_CALL: case TOK_CALL_COND: case TOK_ADDR: {
-                Label* label = (
-                    token->format == FMT_LOCAL ?
+            case C32_TOK_CALL: case C32_TOK_CALL_COND: case C32_TOK_ADDR: {
+                c32_Label* label = (
+                    token->format == C32_FMT_LOCAL ?
                     resolveLabel(reference->globalIdHash, token->value.asIdHash) :
                     resolveLabel(token->value.asIdHash, 0)
                 );
 
                 if (!label) goto undefinedReference;
 
-                outputW(label->pos, FMT_LONG);
+                outputW(label->pos, C32_FMT_LONG);
                 break;
             }
 
-            case TOK_LOCAL_OFFSET: {
-                Label* label = resolveLabel(reference->globalIdHash, token->value.asIdHash);
-                Label* globalLabel = resolveLabel(reference->globalIdHash, 0);
+            case C32_TOK_LOCAL_OFFSET: {
+                c32_Label* label = resolveLabel(reference->globalIdHash, token->value.asIdHash);
+                c32_Label* globalLabel = resolveLabel(reference->globalIdHash, 0);
 
                 if (!label || !globalLabel) goto undefinedReference;
 
-                outputW(label->pos - globalLabel->pos, FMT_LONG);
+                outputW(label->pos - globalLabel->pos, C32_FMT_LONG);
             }
 
-            case TOK_ADDR_EXT: case TOK_LOCAL_OFFSET_EXT: {
-                if (!token->next || token->next->type != TOK_CALL) {
+            case C32_TOK_ADDR_EXT: case C32_TOK_LOCAL_OFFSET_EXT: {
+                if (!token->next || token->next->type != C32_TOK_CALL) {
                     C32_ASM_PRINTF_STDERR("Invalid subsequent token\n");
                     break;
                 }
 
-                Label* label = resolveLabel(token->value.asIdHash, token->next->value.asIdHash);
+                c32_Label* label = resolveLabel(token->value.asIdHash, token->next->value.asIdHash);
 
                 if (!label) goto undefinedReference;
 
                 unsigned long resolvedPos = label->pos;
 
-                if (token->type == TOK_LOCAL_OFFSET_EXT) {
-                    Label* globalLabel = resolveLabel(token->value.asIdHash, 0);
+                if (token->type == C32_TOK_LOCAL_OFFSET_EXT) {
+                    c32_Label* globalLabel = resolveLabel(token->value.asIdHash, 0);
 
                     if (!globalLabel) goto undefinedReference;
 
                     resolvedPos -= globalLabel->pos;
                 }
 
-                outputW(resolvedPos, FMT_LONG);
+                outputW(resolvedPos, C32_FMT_LONG);
                 break;
             }
 
-            case TOK_SIZE_OF: case TOK_SIZE_OF_EXT: {
-                Label* label = C32_ASM_NULL;
+            case C32_TOK_SIZE_OF: case C32_TOK_SIZE_OF_EXT: {
+                c32_Label* label = C32_ASM_NULL;
 
-                if (token->format == FMT_LOCAL) {
+                if (token->format == C32_FMT_LOCAL) {
                     label = resolveLabel(reference->globalIdHash, token->value.asIdHash);
-                } else if (token->type == TOK_SIZE_OF_EXT) {
-                    if (!token->next || token->next->type != TOK_CALL) {
+                } else if (token->type == C32_TOK_SIZE_OF_EXT) {
+                    if (!token->next || token->next->type != C32_TOK_CALL) {
                         C32_ASM_PRINTF_STDERR("Invalid subsequent token\n");
                         break;
                     }
@@ -297,7 +297,7 @@ void resolveReferences() {
 
                 if (!label) goto undefinedReference;
 
-                outputW(label->size, FMT_LONG);
+                outputW(label->size, C32_FMT_LONG);
                 break;
             }
 
@@ -315,7 +315,7 @@ void resolveReferences() {
 }
 
 void resolveGroupLevel() {
-    GroupLevel groupLevel;
+    c32_GroupLevel groupLevel;
 
     if (!popGroupLevel(&groupLevel)) {
         C32_ASM_PRINTF_STDERR("Mismatched group bracket\n");
@@ -324,7 +324,7 @@ void resolveGroupLevel() {
 
     GroupType groupType = groupLevel.token->value.asGroupType;
 
-    if (groupType == GROUP_STD) {
+    if (groupType == C32_GROUP_STD) {
         return;
     }
 
@@ -332,25 +332,25 @@ void resolveGroupLevel() {
 
     pos = groupLevel.pos + 1; // Offset by one byte due to `put` op
 
-    if (groupType == GROUP_COND) {
+    if (groupType == C32_GROUP_COND) {
         pos++; // Offset by another byte due to `not` op
     }
 
-    if (showDebugMessages) C32_ASM_PRINTF("Resolve group close to address 0x%08x\n", pos);
+    if (c32_showDebugMessages) C32_ASM_PRINTF("Resolve group close to address 0x%08x\n", pos);
 
-    if (groupType == GROUP_QUOTED) {
+    if (groupType == C32_GROUP_QUOTED) {
         // Offset pos by 11 to skip over `put` + long + `put` + long + `jump`
-        outputW(groupLevel.pos + 11, FMT_LONG);
+        outputW(groupLevel.pos + 11, C32_FMT_LONG);
         pos++; // Skip over second `put` op
     }
 
-    outputW(oldPos, FMT_LONG);
+    outputW(oldPos, C32_FMT_LONG);
 
     pos = oldPos;
 }
 
-Macro* reoslveMacro(unsigned long idHash) {
-    Macro* macro = firstMacro;
+c32_Macro* reoslveMacro(unsigned long idHash) {
+    c32_Macro* macro = firstMacro;
 
     while (macro) {
         if (macro->idHash == idHash) return macro;
@@ -361,39 +361,39 @@ Macro* reoslveMacro(unsigned long idHash) {
     return C32_ASM_NULL;
 }
 
-void addC32Header() {
+void c32_addC32Header() {
     outputB(0);
     outputChars("C32", 3);
-    outputW(0, FMT_LONG);
+    outputW(0, C32_FMT_LONG);
 
     outputChars("CODE", 4);
-    outputW(0, FMT_LONG); // Code length will be stored here
+    outputW(0, C32_FMT_LONG); // Code length will be stored here
 }
 
-void addC32References() {
+void c32_addC32References() {
     outputB(0);
 
     unsigned long savedPos = pos;
 
     pos = 0x400 + 12;
-    outputW(savedPos - pos, FMT_LONG); // Store code length
+    outputW(savedPos - pos, C32_FMT_LONG); // Store code length
 
     pos = savedPos;
 
     outputChars("REFS", 4);
-    outputW(referenceCount, FMT_LONG);
+    outputW(referenceCount, C32_FMT_LONG);
 
-    Reference* currentReference = firstReference;
+    c32_Reference* currentReference = firstReference;
 
     while (currentReference) {
-        outputW(currentReference->pos, FMT_LONG);
+        outputW(currentReference->pos, C32_FMT_LONG);
 
         currentReference = currentReference-> next;
     }
 }
 
-void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, bool useC32Format) {
-    output = (char*)C32_ASM_MALLOC(BLOCK_SIZE);
+void c32_assemble(c32_Token* firstToken, char** outputPtr, unsigned long* lengthPtr, c32_BinaryFormat binaryFormat) {
+    output = (char*)C32_ASM_MALLOC(C32_BLOCK_SIZE);
     pos = 0x400;
     length = 0;
     firstLabel = C32_ASM_NULL;
@@ -411,45 +411,45 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
 
     grow();
 
-    if (useC32Format) {
-        addC32Header();
+    if (binaryFormat) {
+        c32_addC32Header();
     }
 
-    Token* token = firstToken;
+    c32_Token* token = firstToken;
     unsigned long currentGlobalHashId = 0;
     unsigned long currentLocalHashId = 0;
     unsigned long currentGlobalStartPos = 0;
     unsigned long currentLocalStartPos = 0;
     unsigned int rawLevel = 0;
-    MacroLevel macroLevel;
+    c32_MacroLevel macroLevel;
 
     while (token) {
         bool skipNextToken = false;
         bool skipMacroExit = false;
     
         switch (token->type) {
-            case TOK_ERROR:
+            case C32_TOK_ERROR:
                 break;
 
-            case TOK_OP:
+            case C32_TOK_OP:
                 outputB(token->value.asOpcode | token->format);
                 break;
 
-            case TOK_INT:
-                if (rawLevel == 0) outputB(OP_PUT | token->format);
+            case C32_TOK_INT:
+                if (rawLevel == 0) outputB(C32_OP_PUT | token->format);
                 outputW(token->value.asInt, token->format);
                 break;
 
-            case TOK_STRING: {
+            case C32_TOK_STRING: {
                 unsigned int length = 0;
                 for (; token->value.asString[length]; length++);
                 if (rawLevel == 0) {
                     Format format = getShortestFormat(length + 1);
-                    outputB(OP_PUT | FMT_LONG);
-                    outputW(pos + 6 + getFormatLength(format), FMT_LONG);
-                    outputB(OP_PUT | format);
+                    outputB(C32_OP_PUT | C32_FMT_LONG);
+                    outputW(pos + 6 + getFormatLength(format), C32_FMT_LONG);
+                    outputB(C32_OP_PUT | format);
                     outputW(length + 2, format);
-                    outputB(OP_JUMP | format | REL_REL);
+                    outputB(C32_OP_JUMP | format | C32_REL_REL);
                 }
                 for (unsigned int i = 0; token->value.asString[i]; i++) {
                     outputB(token->value.asString[i]);
@@ -458,8 +458,8 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 break;
             }
 
-            case TOK_DEFINE:
-                if (token->format == FMT_LOCAL) {
+            case C32_TOK_DEFINE:
+                if (token->format == C32_FMT_LOCAL) {
                     setLabelSize(currentGlobalHashId, currentLocalHashId, pos - currentLocalStartPos);
                     currentLocalHashId = token->value.asIdHash;
                     currentLocalStartPos = pos;
@@ -474,26 +474,26 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 }
                 break;
 
-            case TOK_CALL: case TOK_CALL_COND: case TOK_ADDR: case TOK_ADDR_EXT:
-            case TOK_LOCAL_OFFSET: case TOK_LOCAL_OFFSET_EXT:
-            case TOK_SIZE_OF: case TOK_SIZE_OF_EXT:
-                if (rawLevel == 0) outputB(OP_PUT | FMT_LONG);
+            case C32_TOK_CALL: case C32_TOK_CALL_COND: case C32_TOK_ADDR: case C32_TOK_ADDR_EXT:
+            case C32_TOK_LOCAL_OFFSET: case C32_TOK_LOCAL_OFFSET_EXT:
+            case C32_TOK_SIZE_OF: case C32_TOK_SIZE_OF_EXT:
+                if (rawLevel == 0) outputB(C32_OP_PUT | C32_FMT_LONG);
                 createReference(token, currentGlobalHashId);
-                outputW(0, FMT_LONG);
-                if (rawLevel == 0 && token->type == TOK_CALL) outputB(OP_CALL | FMT_LONG);
-                if (rawLevel == 0 && token->type == TOK_CALL_COND) outputB(OP_CIF | FMT_LONG);
+                outputW(0, C32_FMT_LONG);
+                if (rawLevel == 0 && token->type == C32_TOK_CALL) outputB(C32_OP_CALL | C32_FMT_LONG);
+                if (rawLevel == 0 && token->type == C32_TOK_CALL_COND) outputB(C32_OP_CIF | C32_FMT_LONG);
                 if (
-                    token->type == TOK_ADDR_EXT ||
-                    token->type == TOK_LOCAL_OFFSET_EXT ||
-                    token->type == TOK_SIZE_OF_EXT
+                    token->type == C32_TOK_ADDR_EXT ||
+                    token->type == C32_TOK_LOCAL_OFFSET_EXT ||
+                    token->type == C32_TOK_SIZE_OF_EXT
                 ) skipNextToken = true;
                 break;
 
-            case TOK_RAW_OPEN:
+            case C32_TOK_RAW_OPEN:
                 rawLevel++;
                 break;
 
-            case TOK_RAW_CLOSE:
+            case C32_TOK_RAW_CLOSE:
                 if (rawLevel == 0) {
                     C32_ASM_PRINTF_STDERR("Mismatched raw bracket\n");
                     break;
@@ -501,38 +501,38 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 rawLevel--;
                 break;
 
-            case TOK_GROUP_OPEN:
+            case C32_TOK_C32_GROUP_OPEN:
                 pushGroupLevel(token);
-                if (token->value.asGroupType == GROUP_STD) break;
-                if (token->value.asGroupType == GROUP_COND) outputB(OP_NOT);
-                outputB(OP_PUT | FMT_LONG);
-                outputW(0, FMT_LONG);
-                if (token->value.asGroupType == GROUP_QUOTED) {
-                    outputB(OP_PUT | FMT_LONG);
-                    outputW(0, FMT_LONG);
+                if (token->value.asGroupType == C32_GROUP_STD) break;
+                if (token->value.asGroupType == C32_GROUP_COND) outputB(C32_OP_NOT);
+                outputB(C32_OP_PUT | C32_FMT_LONG);
+                outputW(0, C32_FMT_LONG);
+                if (token->value.asGroupType == C32_GROUP_QUOTED) {
+                    outputB(C32_OP_PUT | C32_FMT_LONG);
+                    outputW(0, C32_FMT_LONG);
                 }
-                outputB((token->value.asGroupType == GROUP_COND ? OP_IF : OP_JUMP) | FMT_LONG);
+                outputB((token->value.asGroupType == C32_GROUP_COND ? C32_OP_IF : C32_OP_JUMP) | C32_FMT_LONG);
                 break;
 
-            case TOK_GROUP_CLOSE:
+            case C32_TOK_C32_GROUP_CLOSE:
                 resolveGroupLevel();
                 break;
 
-            case TOK_POS_ABS:
+            case C32_TOK_POS_ABS:
                 pos = token->value.asInt; grow();
                 break;
 
-            case TOK_POS_OFFSET:
+            case C32_TOK_POS_OFFSET:
                 pos += token->value.asInt; grow();
                 break;
 
-            case TOK_SIZE_OF_OFFSET: case TOK_SIZE_OF_OFFSET_EXT: {
-                Label* label = C32_ASM_NULL;
+            case C32_TOK_SIZE_OF_OFFSET: case C32_TOK_SIZE_OF_OFFSET_EXT: {
+                c32_Label* label = C32_ASM_NULL;
 
-                if (token->format == FMT_LOCAL) {
+                if (token->format == C32_FMT_LOCAL) {
                     label = resolveLabel(currentGlobalHashId, token->value.asIdHash);
-                } else if (token->type == TOK_SIZE_OF_OFFSET_EXT) {
-                    if (!token->next || token->next->type != TOK_CALL) {
+                } else if (token->type == C32_TOK_SIZE_OF_OFFSET_EXT) {
+                    if (!token->next || token->next->type != C32_TOK_CALL) {
                         C32_ASM_PRINTF_STDERR("Invalid subsequent token\n");
                         break;
                     }
@@ -552,15 +552,15 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 break;
             }
 
-            case TOK_MACRO: {
-                Macro* macro = reoslveMacro(token->value.asIdHash);
+            case C32_TOK_MACRO: {
+                c32_Macro* macro = reoslveMacro(token->value.asIdHash);
 
                 if (!macro) {
                     C32_ASM_PRINTF_STDERR("Undefined macro\n");
                     break;
                 }
 
-                if (macroLevelCount >= MAX_MACRO_DEPTH - 1) {
+                if (macroLevelCount >= C32_MAX_MACRO_DEPTH - 1) {
                     C32_ASM_PRINTF_STDERR("Maximum macro depth limit reached\n");
                     break;
                 }
@@ -572,7 +572,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 break;
             }
 
-            case TOK_MACRO_DEFINE: {
+            case C32_TOK_MACRO_DEFINE: {
                 unsigned int groupLevel = 0;
 
                 createMacro(token->value.asIdHash, token);
@@ -580,8 +580,8 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 token = token->next;
 
                 while (token) {
-                    if (token->type == TOK_GROUP_OPEN) groupLevel++;
-                    if (token->type == TOK_GROUP_CLOSE && groupLevel > 0) groupLevel--;
+                    if (token->type == C32_TOK_C32_GROUP_OPEN) groupLevel++;
+                    if (token->type == C32_TOK_C32_GROUP_CLOSE && groupLevel > 0) groupLevel--;
 
                     if (groupLevel == 0) {
                         break;
@@ -607,7 +607,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
         }
 
         if (!skipMacroExit && lastMacroLevel && lastMacroLevel->baseGroupLevel == lastGroupLevel && popMacroLevel(&macroLevel)) {
-            token = macroLevel.continueToken;
+            token = macroLevel.continuec32_Token;
         }
     }
 
@@ -620,8 +620,8 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
 
     pos = savedPos;
 
-    if (useC32Format) {
-        addC32References();
+    if (binaryFormat & C32_BINFMT_REFS) {
+        c32_addC32References();
     }
 
     *outputPtr = (char*)C32_ASM_REALLOC(output, length);

@@ -1,11 +1,11 @@
 #include "config.h"
 #include "parser.h"
 
-#define MATCH_BASE(prefix, base) if (matchChars(&code, prefix, false)) { \
-    if (!matchUInt(&code, base, &intResult)) goto error; \
+#define C32_MATCH_BASE(prefix, base) if (c32_matchChars(&code, prefix, false)) { \
+    if (!c32_matchUInt(&code, base, &intResult)) goto error; \
         tokenToAdd.type = numberTokenType; \
         tokenToAdd.value.asInt = intResult; \
-        tokenToAdd.format = getFormatSuffix(&code); \
+        tokenToAdd.format = c32_getFormatSuffix(&code); \
         goto addToken; \
     }
 
@@ -27,11 +27,11 @@ char* opSymbols[] = {
     NULL
 };
 
-bool showDebugMessages = false;
+bool c32_showDebugMessages = false;
 unsigned long* includedPaths = NULL;
 unsigned int includedPathsCount = 0;
-CachedIdentifier* firstCachedIdentifier = NULL;
-CachedIdentifier* lastCachedIdentifier = NULL;
+c32_CachedIdentifier* firstCachedIdentifier = NULL;
+c32_CachedIdentifier* lastCachedIdentifier = NULL;
 
 char* joinPaths(const char* base, const char* relative) {
     char* result = (char*)C32_ASM_MALLOC(strlen(base) + strlen(relative) + 2);
@@ -77,7 +77,7 @@ char getEscapeChar(char c) {
     }
 }
 
-bool matchChars(char** codePtr, char* match, bool whole) {
+bool c32_matchChars(char** codePtr, char* match, bool whole) {
     unsigned int i = 0;
 
     while (true) {
@@ -102,7 +102,7 @@ bool matchChars(char** codePtr, char* match, bool whole) {
     }
 }
 
-bool matchInList(char** codePtr, char* list[], unsigned int* index, bool whole) {
+bool c32_matchInList(char** codePtr, char* list[], unsigned int* index, bool whole) {
     unsigned int i = 0;
 
     while (list[i]) {
@@ -112,7 +112,7 @@ bool matchInList(char** codePtr, char* list[], unsigned int* index, bool whole) 
             continue;
         }
 
-        if (matchChars(codePtr, list[i], whole)) {
+        if (c32_matchChars(codePtr, list[i], whole)) {
             *index = i;
             return true;
         }
@@ -123,7 +123,7 @@ bool matchInList(char** codePtr, char* list[], unsigned int* index, bool whole) 
     return false;
 }
 
-bool matchUInt(char** codePtr, int base, unsigned int* result) {
+bool c32_matchUInt(char** codePtr, int base, unsigned int* result) {
     unsigned int i = 0;
     char* code = *codePtr;
 
@@ -155,7 +155,7 @@ bool matchUInt(char** codePtr, int base, unsigned int* result) {
     return i > 0;
 }
 
-bool matchIdentifier(char** codePtr, unsigned long* result) {
+bool c32_matchIdentifier(char** codePtr, unsigned long* result) {
     // Using djb2 algorithm for hashing
 
     unsigned int i = 0;
@@ -193,8 +193,8 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
     *codePtr += i;
     *result = hash;
 
-    if (!idHashToString(hash)) {
-        CachedIdentifier* cachedIdentifier = (CachedIdentifier*)C32_ASM_MALLOC(sizeof(CachedIdentifier));
+    if (!c32_idHashToString(hash)) {
+        c32_CachedIdentifier* cachedIdentifier = (c32_CachedIdentifier*)C32_ASM_MALLOC(sizeof(c32_CachedIdentifier));
 
         cachedIdentifier->idHash = hash;
         cachedIdentifier->string = string;
@@ -209,8 +209,8 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
     return true;
 }
 
-char* idHashToString(unsigned long idHash) {
-    CachedIdentifier* currentCachedIdentifier = firstCachedIdentifier;
+char* c32_idHashToString(unsigned long idHash) {
+    c32_CachedIdentifier* currentCachedIdentifier = firstCachedIdentifier;
 
     while (currentCachedIdentifier) {
         if (currentCachedIdentifier->idHash == idHash) {
@@ -304,40 +304,40 @@ bool matchPath(char** codePtr, char** resultPtr) {
     return !corelib;
 }
 
-Format getFormatSuffix(char** code) {
+Format c32_getFormatSuffix(char** code) {
     if ((*code)[0] == '\'') {
         (*code)++;
-        return FMT_BYTE;
+        return C32_FMT_BYTE;
     }
 
     if ((*code)[0] == '\"') {
         (*code)++;
-        return FMT_SHORT;
+        return C32_FMT_SHORT;
     }
 
     if ((*code)[0] == '%') {
         (*code)++;
-        return FMT_FLOAT;
+        return C32_FMT_FLOAT;
     }
 
-    return FMT_LONG;
+    return C32_FMT_LONG;
 }
 
-Token* parse(char* code, char* path) {
-    Token* firstToken = NULL;
-    Token* lastToken = NULL;
-    Token tokenToAdd;
+c32_Token* c32_parse(char* code, char* path) {
+    c32_Token* firstToken = NULL;
+    c32_Token* lastToken = NULL;
+    c32_Token tokenToAdd;
     unsigned int length;
     int commentLevel = 0;
     unsigned int intResult = 0;
     unsigned long hashResult = 0;
-    Format resultFormat = FMT_BYTE;
+    Format resultFormat = C32_FMT_BYTE;
     bool expectSizeOfLocalNext = false;
 
     if (!includedPaths) includedPaths = (unsigned long*)C32_ASM_MALLOC(0);
 
     while (code[0]) {
-        TokenType numberTokenType = TOK_INT;
+        c32_TokenType numberTokenType = C32_TOK_INT;
 
         if (code[0] == '(') commentLevel++;
 
@@ -369,9 +369,9 @@ Token* parse(char* code, char* path) {
 
             code++;
 
-            tokenToAdd.type = TOK_INT;
+            tokenToAdd.type = C32_TOK_INT;
             tokenToAdd.value.asInt = c;
-            tokenToAdd.format = FMT_BYTE;
+            tokenToAdd.format = C32_FMT_BYTE;
 
             goto addToken;
         }
@@ -383,68 +383,68 @@ Token* parse(char* code, char* path) {
                 goto error;
             }
 
-            tokenToAdd.type = TOK_STRING;
+            tokenToAdd.type = C32_TOK_STRING;
             tokenToAdd.value.asString = result;
 
             goto addToken;
         }
 
         if (code[0] == '[' || code[0] == ']') {
-            tokenToAdd.type = code[0] == ']' ? TOK_RAW_CLOSE : TOK_RAW_OPEN;
+            tokenToAdd.type = code[0] == ']' ? C32_TOK_RAW_CLOSE : C32_TOK_RAW_OPEN;
             code++;
 
             goto addToken;
         }
 
         if (code[0] == '{' || code[0] == '}') {
-            tokenToAdd.type = code[0] == '}' ? TOK_GROUP_CLOSE : TOK_GROUP_OPEN;
-            tokenToAdd.value.asGroupType = GROUP_STD;
+            tokenToAdd.type = code[0] == '}' ? C32_TOK_C32_GROUP_CLOSE : C32_TOK_C32_GROUP_OPEN;
+            tokenToAdd.value.asGroupType = C32_GROUP_STD;
             code++;
 
             goto addToken;
         }
 
-        if (matchChars(&code, "?{", false)) {
-            tokenToAdd.type = TOK_GROUP_OPEN;
-            tokenToAdd.value.asGroupType = GROUP_COND;
+        if (c32_matchChars(&code, "?{", false)) {
+            tokenToAdd.type = C32_TOK_C32_GROUP_OPEN;
+            tokenToAdd.value.asGroupType = C32_GROUP_COND;
 
             goto addToken;
         }
 
-        if (matchChars(&code, ":{", false)) {
-            tokenToAdd.type = TOK_GROUP_OPEN;
-            tokenToAdd.value.asGroupType = GROUP_QUOTED;
+        if (c32_matchChars(&code, ":{", false)) {
+            tokenToAdd.type = C32_TOK_C32_GROUP_OPEN;
+            tokenToAdd.value.asGroupType = C32_GROUP_QUOTED;
 
             goto addToken;
         }
 
-        if (matchChars(&code, "${", false)) {
-            tokenToAdd.type = TOK_GROUP_OPEN;
-            tokenToAdd.value.asGroupType = GROUP_SKIPPED;
+        if (c32_matchChars(&code, "${", false)) {
+            tokenToAdd.type = C32_TOK_C32_GROUP_OPEN;
+            tokenToAdd.value.asGroupType = C32_GROUP_SKIPPED;
 
             goto addToken;
         }
 
-        if (matchInList(&code, opNames, &intResult, true) || matchInList(&code, opSymbols, &intResult, true)) {
-            tokenToAdd.type = TOK_OP;
+        if (c32_matchInList(&code, opNames, &intResult, true) || c32_matchInList(&code, opSymbols, &intResult, true)) {
+            tokenToAdd.type = C32_TOK_OP;
             tokenToAdd.value.asOpcode = intResult << 3;
-            tokenToAdd.format = getFormatSuffix(&code);
+            tokenToAdd.format = c32_getFormatSuffix(&code);
 
             goto addToken;
         }
 
-        if (matchIdentifier(&code, &hashResult)) {
-            tokenToAdd.type = TOK_CALL;
+        if (c32_matchIdentifier(&code, &hashResult)) {
+            tokenToAdd.type = C32_TOK_CALL;
             tokenToAdd.value.asIdHash = hashResult;
-            tokenToAdd.format = FMT_GLOBAL;
+            tokenToAdd.format = C32_FMT_GLOBAL;
 
             if (code[0] == ':' || code[0] == '~') {
-                tokenToAdd.type = code[0] == ':' ? TOK_DEFINE : TOK_SIZE_OF;
+                tokenToAdd.type = code[0] == ':' ? C32_TOK_DEFINE : C32_TOK_SIZE_OF;
                 code++;
             }
 
             if (code[0] == '.') {
-                tokenToAdd.type = TOK_SIZE_OF_EXT;
+                tokenToAdd.type = C32_TOK_SIZE_OF_EXT;
                 expectSizeOfLocalNext = true;
             }
 
@@ -462,13 +462,13 @@ Token* parse(char* code, char* path) {
                 code++;
             }
 
-            if (!matchIdentifier(&code, &hashResult)) {
+            if (!c32_matchIdentifier(&code, &hashResult)) {
                 goto error;
             }
 
-            tokenToAdd.type = TOK_CALL;
+            tokenToAdd.type = C32_TOK_CALL;
             tokenToAdd.value.asIdHash = hashResult;
-            tokenToAdd.format = local ? FMT_LOCAL : FMT_GLOBAL;
+            tokenToAdd.format = local ? C32_FMT_LOCAL : C32_FMT_GLOBAL;
 
             if (expectSizeOfLocalNext) {
                 if (code[0] != '~') goto error;
@@ -478,14 +478,14 @@ Token* parse(char* code, char* path) {
             }
 
             if (prefix == '.' && code[0] == ':') {
-                tokenToAdd.type = TOK_DEFINE;
+                tokenToAdd.type = C32_TOK_DEFINE;
                 code++;
             } else if (prefix == '?') {
-                tokenToAdd.type = TOK_CALL_COND;
+                tokenToAdd.type = C32_TOK_CALL_COND;
             } else if (prefix == '$') {
-                tokenToAdd.type = code[0] == '.' ? TOK_ADDR_EXT : TOK_ADDR;
+                tokenToAdd.type = code[0] == '.' ? C32_TOK_ADDR_EXT : C32_TOK_ADDR;
             } else if (code[0] == '~') {
-                tokenToAdd.type = TOK_SIZE_OF;
+                tokenToAdd.type = C32_TOK_SIZE_OF;
                 code++;
             }
 
@@ -502,22 +502,22 @@ Token* parse(char* code, char* path) {
                 code++;
             }
 
-            if (!matchIdentifier(&code, &hashResult)) {
+            if (!c32_matchIdentifier(&code, &hashResult)) {
                 goto error;
             }
 
-            tokenToAdd.type = TOK_MACRO;
+            tokenToAdd.type = C32_TOK_MACRO;
             tokenToAdd.value.asIdHash = hashResult;
 
             if (isLocalOffset) {
-                tokenToAdd.type = TOK_LOCAL_OFFSET;
+                tokenToAdd.type = C32_TOK_LOCAL_OFFSET;
                 goto addToken;
             }
 
             if (code[0] == '.') {
-                tokenToAdd.type = TOK_LOCAL_OFFSET_EXT;
+                tokenToAdd.type = C32_TOK_LOCAL_OFFSET_EXT;
             } else if (code[0] == ':') {
-                tokenToAdd.type = TOK_MACRO_DEFINE;
+                tokenToAdd.type = C32_TOK_MACRO_DEFINE;
                 code++;
             }
 
@@ -560,9 +560,9 @@ Token* parse(char* code, char* path) {
             includedPaths = (unsigned long*)C32_ASM_REALLOC(includedPaths, sizeof(unsigned long) * (++includedPathsCount));
             includedPaths[includedPathsCount - 1] = hashedPath;
 
-            if (!readFile(includedPath, &includedCode, NULL)) goto error;
+            if (!c32_readFile(includedPath, &includedCode, NULL)) goto error;
 
-            Token* includedToken = parse(includedCode, includedPath);
+            c32_Token* includedToken = c32_parse(includedCode, includedPath);
 
             if (!includedToken) goto skipInclusion;
             if (!firstToken) firstToken = includedToken;
@@ -580,43 +580,43 @@ Token* parse(char* code, char* path) {
         }
 
         if (code[0] == '@') {
-            numberTokenType = TOK_POS_ABS;
+            numberTokenType = C32_TOK_POS_ABS;
             code++;
         } else if (code[0] == '~') {
             bool local = code[1] == '.';
 
             code += local ? 2 : 1;
 
-            if (matchIdentifier(&code, &hashResult)) {
-                tokenToAdd.type = code[0] == '.' ? TOK_SIZE_OF_OFFSET_EXT : TOK_SIZE_OF_OFFSET;
+            if (c32_matchIdentifier(&code, &hashResult)) {
+                tokenToAdd.type = code[0] == '.' ? C32_TOK_SIZE_OF_OFFSET_EXT : C32_TOK_SIZE_OF_OFFSET;
                 tokenToAdd.value.asIdHash = hashResult;
-                tokenToAdd.format = local ? FMT_LOCAL : FMT_GLOBAL;
+                tokenToAdd.format = local ? C32_FMT_LOCAL : C32_FMT_GLOBAL;
 
                 goto addToken;
             }
 
-            numberTokenType = TOK_POS_OFFSET;
+            numberTokenType = C32_TOK_POS_OFFSET;
         }
 
-        MATCH_BASE("0b", 2);
-        MATCH_BASE("0o", 8);
-        MATCH_BASE("0x", 16);
+        C32_MATCH_BASE("0b", 2);
+        C32_MATCH_BASE("0o", 8);
+        C32_MATCH_BASE("0x", 16);
 
-        if (matchUInt(&code, 10, &intResult)) {
+        if (c32_matchUInt(&code, 10, &intResult)) {
             tokenToAdd.type = numberTokenType;
             tokenToAdd.value.asInt = intResult;
-            tokenToAdd.format = getFormatSuffix(&code);
+            tokenToAdd.format = c32_getFormatSuffix(&code);
 
             goto addToken;
         }
 
         error:
 
-        tokenToAdd.type = TOK_ERROR;
+        tokenToAdd.type = C32_TOK_ERROR;
 
         addToken:
 
-        Token* tokenPtr = (Token*)C32_ASM_MALLOC(sizeof(Token));
+        c32_Token* tokenPtr = (c32_Token*)C32_ASM_MALLOC(sizeof(c32_Token));
 
         tokenPtr->type = tokenToAdd.type;
         tokenPtr->value = tokenToAdd.value;
@@ -628,7 +628,7 @@ Token* parse(char* code, char* path) {
 
         lastToken = tokenPtr;
 
-        if (tokenToAdd.type == TOK_ERROR) {
+        if (tokenToAdd.type == C32_TOK_ERROR) {
             break;
         }
     }
@@ -636,102 +636,102 @@ Token* parse(char* code, char* path) {
     return firstToken;
 }
 
-const char* inspectFormat(Token* token) {
-    if (token->format == FMT_BYTE) return "'";
-    if (token->format == FMT_SHORT) return "\"";
-    if (token->format == FMT_FLOAT) return "%";
+const char* c32_inspectFormat(c32_Token* token) {
+    if (token->format == C32_FMT_BYTE) return "'";
+    if (token->format == C32_FMT_SHORT) return "\"";
+    if (token->format == C32_FMT_FLOAT) return "%";
     return "";
 }
 
-void inspect(Token* token) {
+void c32_inspect(c32_Token* token) {
     if (!token) {
         printf("\n");
         return;
     }
 
     switch (token->type) {
-        case TOK_ERROR:
+        case C32_TOK_ERROR:
             printf("(error) ");
             break;
 
-        case TOK_OP:
-            printf("op(%s%s) ", opNames[token->value.asOpcode >> 3], inspectFormat(token));
+        case C32_TOK_OP:
+            printf("op(%s%s) ", opNames[token->value.asOpcode >> 3], c32_inspectFormat(token));
             break;
 
-        case TOK_INT:
-            printf("int(%d%s) ", token->value.asInt, inspectFormat(token));
+        case C32_TOK_INT:
+            printf("int(%d%s) ", token->value.asInt, c32_inspectFormat(token));
             break;
 
-        case TOK_STRING:
+        case C32_TOK_STRING:
             printf("string(%s) ", token->value.asString);
             break;
 
-        case TOK_DEFINE:
-            printf("def(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
+        case C32_TOK_DEFINE:
+            printf("def(%s%s) ", token->format == C32_FMT_LOCAL ? "." : "", c32_idHashToString(token->value.asIdHash));
             break;
 
-        case TOK_CALL:
-            printf("call(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
+        case C32_TOK_CALL:
+            printf("call(%s%s) ", token->format == C32_FMT_LOCAL ? "." : "", c32_idHashToString(token->value.asIdHash));
             break;
 
-        case TOK_CALL_COND:
-            printf("callif(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
+        case C32_TOK_CALL_COND:
+            printf("callif(%s%s) ", token->format == C32_FMT_LOCAL ? "." : "", c32_idHashToString(token->value.asIdHash));
             break;
 
-        case TOK_ADDR:
-            printf("addr(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
+        case C32_TOK_ADDR:
+            printf("addr(%s%s) ", token->format == C32_FMT_LOCAL ? "." : "", c32_idHashToString(token->value.asIdHash));
             break;
 
-        case TOK_ADDR_EXT:
-            printf("addrext(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asIdHash));
+        case C32_TOK_ADDR_EXT:
+            printf("addrext(%s%s) ", token->format == C32_FMT_LOCAL ? "." : "", c32_idHashToString(token->value.asIdHash));
             break;
 
-        case TOK_RAW_OPEN:
+        case C32_TOK_RAW_OPEN:
             printf("raw ");
             break;
 
-        case TOK_RAW_CLOSE:
+        case C32_TOK_RAW_CLOSE:
             printf("endraw ");
             break;
 
-        case TOK_GROUP_OPEN:
+        case C32_TOK_C32_GROUP_OPEN:
             printf("group(%c) ", token->value.asGroupType);
             break;
 
-        case TOK_GROUP_CLOSE:
+        case C32_TOK_C32_GROUP_CLOSE:
             printf("endgroup ");
             break;
 
-        case TOK_POS_ABS:
-            printf("posabs(%ld%s) ", token->value.asInt, inspectFormat(token));
+        case C32_TOK_POS_ABS:
+            printf("posabs(%ld%s) ", token->value.asInt, c32_inspectFormat(token));
             break;
 
-        case TOK_POS_OFFSET:
-            printf("posoffset(%ld%s) ", token->value.asInt, inspectFormat(token));
+        case C32_TOK_POS_OFFSET:
+            printf("posoffset(%ld%s) ", token->value.asInt, c32_inspectFormat(token));
             break;
 
-        case TOK_SIZE_OF:
-            printf("sizeof(%s%s) ", token->format == FMT_LOCAL ? "." : "", idHashToString(token->value.asInt));
+        case C32_TOK_SIZE_OF:
+            printf("sizeof(%s%s) ", token->format == C32_FMT_LOCAL ? "." : "", c32_idHashToString(token->value.asInt));
             break;
 
-        case TOK_SIZE_OF_EXT:
+        case C32_TOK_SIZE_OF_EXT:
             printf("sizeofext(%ld) ", token->value.asInt);
             break;
 
-        case TOK_LOCAL_OFFSET:
-            printf("offset(.%s) ", idHashToString(token->value.asIdHash));
+        case C32_TOK_LOCAL_OFFSET:
+            printf("offset(.%s) ", c32_idHashToString(token->value.asIdHash));
             break;
 
-        case TOK_LOCAL_OFFSET_EXT:
-            printf("offsetext(%s) ", idHashToString(token->value.asIdHash));
+        case C32_TOK_LOCAL_OFFSET_EXT:
+            printf("offsetext(%s) ", c32_idHashToString(token->value.asIdHash));
             break;
 
-        case TOK_MACRO:
-            printf("macro(%s) ", idHashToString(token->value.asIdHash));
+        case C32_TOK_MACRO:
+            printf("macro(%s) ", c32_idHashToString(token->value.asIdHash));
             break;
 
-        case TOK_MACRO_DEFINE:
-            printf("defmacro(%s) ", idHashToString(token->value.asIdHash));
+        case C32_TOK_MACRO_DEFINE:
+            printf("defmacro(%s) ", c32_idHashToString(token->value.asIdHash));
             break;
 
         default:
@@ -739,5 +739,5 @@ void inspect(Token* token) {
             break;
     }
 
-    inspect(token->next);
+    c32_inspect(token->next);
 }

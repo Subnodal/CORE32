@@ -28,13 +28,13 @@
 #endif
 
 #ifndef C32_ASM_RECONFIG_FS
-    #define C32_ASM_READ_FILE(path, dataPtr, sizePtr) readFile(path, dataPtr, sizePtr)
-    #define C32_ASM_WRITE_FILE(path, data, size) writeFile(path, data, size)
+    #define C32_ASM_READ_FILE(path, dataPtr, sizePtr) c32_readFile(path, dataPtr, sizePtr)
+    #define C32_ASM_WRITE_FILE(path, data, size) c32_writeFile(path, data, size)
     #define C32_ASM_PATH_MAX PATH_MAX
-    #define C32_ASM_GET_SELF_PATH(selfPath) getSelfPath(selfPath)
+    #define C32_ASM_GET_SELF_PATH(selfPath) c32_getSelfPath(selfPath)
     #define C32_ASM_DIRNAME(path) dirname(path)
 
-    void getSelfPath(char selfPath[C32_ASM_PATH_MAX]);
-    bool readFile(char* path, char** dataPtr, size_t* sizePtr);
-    bool writeFile(char* path, char* data, size_t size);
+    void c32_getSelfPath(char selfPath[C32_ASM_PATH_MAX]);
+    bool c32_readFile(char* path, char** dataPtr, size_t* sizePtr);
+    bool c32_writeFile(char* path, char* data, size_t size);
 #endif

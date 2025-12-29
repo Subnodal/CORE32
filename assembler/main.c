@@ -19,7 +19,7 @@ enum {
 
 int main(int argc, char* argv[]) {
     int argState = ARG_STATE_INFILE;
-    int argFormat = ARG_FORMAT_C32;
+    c32_BinaryFormat binaryFormat = C32_BINFMT_CODE;
     char* infile = NULL;
     char* outfile = NULL;
 
@@ -35,12 +35,17 @@ int main(int argc, char* argv[]) {
         }
         
         if (strcmp(argv[i], "--raw") == 0) {
-            argFormat = ARG_FORMAT_RAW;
+            binaryFormat = 0;
+            continue;
+        }
+
+        if (strcmp(argv[i], "--refs") == 0) {
+            binaryFormat = C32_BINFMT_CODE | C32_BINFMT_REFS;
             continue;
         }
 
         if (strcmp(argv[i], "--debug") == 0) {
-            showDebugMessages = true;
+            c32_showDebugMessages = true;
             continue;
         }
 
@@ -65,23 +70,23 @@ int main(int argc, char* argv[]) {
 
     char* data;
 
-    if (!readFile(infile, &data, NULL)) {
+    if (!c32_readFile(infile, &data, NULL)) {
         fprintf(stderr, "Error reading file contents\n");
 
         return 1;
     }
 
-    Token* firstToken = parse(data, infile);
+    c32_Token* firstToken = c32_parse(data, infile);
 
     free(data);
 
-    if (showDebugMessages) inspect(firstToken);
+    if (c32_showDebugMessages) c32_inspect(firstToken);
 
     char* output;
     unsigned long length;
     unsigned long offset = 0x400;
 
-    assemble(firstToken, &output, &length, argFormat == ARG_FORMAT_C32);
+    c32_assemble(firstToken, &output, &length, binaryFormat);
 
     if (!outfile) {
         fprintf(stderr, "No output file specified\n");
@@ -91,7 +96,7 @@ int main(int argc, char* argv[]) {
 
     FILE* fp = fopen(outfile, "w");
 
-    if (!writeFile(outfile, output + offset, length - offset)) {
+    if (!c32_writeFile(outfile, output + offset, length - offset)) {
         fprintf(stderr, "Error when writing file\n");
 
         return 1;
