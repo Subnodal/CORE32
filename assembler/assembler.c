@@ -140,6 +140,8 @@ bool popGroupLevel(c32_GroupLevel* groupLevel) {
 
     *groupLevel = *lastGroupLevel;
 
+    C32_ASM_FREE(lastGroupLevel);
+
     lastGroupLevel = lastGroupLevel->prev;
 
     if (lastGroupLevel) {
@@ -185,6 +187,8 @@ bool popMacroLevel(c32_MacroLevel* macroLevel) {
     }
 
     *macroLevel = *lastMacroLevel;
+
+    C32_ASM_FREE(lastMacroLevel);
 
     lastMacroLevel = lastMacroLevel->prev;
     macroLevelCount--;
@@ -426,7 +430,7 @@ void c32_assemble(c32_Token* firstToken, char** outputPtr, unsigned long* length
     while (token) {
         bool skipNextToken = false;
         bool skipMacroExit = false;
-    
+
         switch (token->type) {
             case C32_TOK_ERROR:
                 break;

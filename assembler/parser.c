@@ -206,6 +206,8 @@ bool c32_matchIdentifier(char** codePtr, unsigned long* result) {
         lastCachedIdentifier = cachedIdentifier;
     }
 
+    C32_ASM_FREE(string);
+
     return true;
 }
 
@@ -533,10 +535,12 @@ c32_Token* c32_parse(char* code, char* path) {
 
             if (matchPath(&code, &relativePath)) {
                 char* pathDir = dirname(strdup(path));
+                char* fullPath = joinPaths(pathDir, relativePath);
 
-                includedPath = realpath(joinPaths(pathDir, relativePath), NULL);
+                includedPath = realpath(fullPath, NULL);
 
                 C32_ASM_FREE(pathDir);
+                C32_ASM_FREE(fullPath);
 
                 if (!includedPath) {
                     C32_ASM_PRINTF_STDERR("Invalid path: %s\n", relativePath);
@@ -571,6 +575,8 @@ c32_Token* c32_parse(char* code, char* path) {
             lastToken = includedToken;
 
             while (lastToken->next) lastToken = lastToken->next;
+
+            C32_ASM_FREE(includedCode);
 
             skipInclusion:
 
