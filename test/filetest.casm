@@ -65,8 +65,7 @@ readTest:
     }
 
     {"Seeked to pos: " print} {$fd get file_tell printLong} {"\n" print}
-
-    ({"Stream char available? " print} {$fd get file_available from' to printLong} {"\n" print})
+    {"Stream char available? " print} {$fd get file_available from' to printLong} {"\n" print}
 
     {$fd get} file_readChar !' ?{
         "Failed to read\n" print
@@ -80,9 +79,7 @@ readTest:
         ret
     }
 
-    #FILE_TO_END {$fd get} file_read
-
-    dup 0 = ?{
+    #FILE_TO_END {$fd get} file_read dup 0 = ?{
         "Failed to read into buffer\n" print
         ret
     }
