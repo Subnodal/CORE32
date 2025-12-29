@@ -1,13 +1,15 @@
-#ifndef C32_H_
-#define C32_H_
+#ifndef CORE32_H_
+#define CORE32_H_
 
 #include <stdlib.h>
 #include <stdint.h>
 
 #define C32_MALLOC malloc
+#define C32_REALLOC realloc
 #define C32_FREE free
 
 #define C32_MEM_SIZE 0x10000
+#define C32_MEM_CAN_GROW(vm, newSize) 0
 #define C32_ENTRY_POINT 0x400
 #define C32_CSP_BASE 0x100
 #define C32_DSP_BASE 0x200
@@ -70,6 +72,7 @@ typedef struct CORE32 {
     c32_Long ssr; // System call service routine address
     c32_Byte running;
     c32_Byte* mem;
+    c32_Long memSize;
     c32_Long memLimit;
     c32_Long codeEnd;
     struct c32_InterruptHandler* firstHandler;

@@ -38,19 +38,15 @@ CORE32* c32_new(c32_Byte* code, c32_Long codeLength) {
     vm->dsp = C32_DSP_BASE;
     vm->ssr = C32_ENTRY_POINT;
     vm->running = 1;
-    vm->mem = C32_MALLOC(C32_MEM_SIZE);
+    vm->mem = C32_MALLOC(C32_MEM_SIZE + 1);
+    vm->memSize = C32_MEM_SIZE;
     vm->memLimit = 0;
     vm->codeEnd = codeLength;
     vm->firstHandler = 0;
     vm->lastHandler = 0;
 
-    for (c32_Long i = 0; i < C32_MEM_SIZE; i++) {
-        vm->mem[i] = 0;
-    }
-
-    for (c32_Long i = 0; i < codeLength; i++) {
-        vm->mem[i] = code[i];
-    }
+    for (c32_Long i = 0; i < C32_MEM_SIZE + 1; i++) vm->mem[i] = 0;
+    for (c32_Long i = 0; i < codeLength; i++) vm->mem[i] = code[i];
 
     return vm;
 }
@@ -69,7 +65,7 @@ void c32_registerHandler(CORE32* vm, c32_Long id, void (*callback)(CORE32* vm)) 
 }
 
 c32_Byte c32_read(CORE32* vm, c32_Long* p) {
-    c32_Byte result = *p <= C32_MEM_SIZE ? vm->mem[*p] : 0;
+    c32_Byte result = *p <= vm->memSize ? vm->mem[*p] : 0;
 
     (*p)++;
 
@@ -77,7 +73,13 @@ c32_Byte c32_read(CORE32* vm, c32_Long* p) {
 }
 
 void c32_write(CORE32* vm, c32_Long* p, c32_Byte data) {
-    *p <= C32_MEM_SIZE && (vm->mem[*p] = data);
+    if (*p >= vm->memSize && *p < C32_MEM_CAN_GROW(vm, *p + 2)) {
+        vm->mem = C32_REALLOC(vm->mem, *p + 2);
+        for (c32_Long i = vm->memSize; i < *p + 2; i++) vm->mem[i] = 0;
+        vm->memSize = *p + 1;
+    }
+
+    *p < vm->memSize && (vm->mem[*p] = data);
 
     (*p)++;
 }
