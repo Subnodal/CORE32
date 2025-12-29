@@ -1,12 +1,5 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <libgen.h>
-#include <unistd.h>
-#include <linux/limits.h>
-
+#include "config.h"
 #include "parser.h"
-#include "files.h"
 
 #define MATCH_BASE(prefix, base) if (matchChars(&code, prefix, false)) { \
     if (!matchUInt(&code, base, &intResult)) goto error; \
@@ -41,13 +34,13 @@ CachedIdentifier* firstCachedIdentifier = NULL;
 CachedIdentifier* lastCachedIdentifier = NULL;
 
 char* joinPaths(const char* base, const char* relative) {
-    char* result = malloc(strlen(base) + strlen(relative) + 2);
+    char* result = (char*)C32_ASM_MALLOC(strlen(base) + strlen(relative) + 2);
 
     result[0] = '\0';
 
-    strcat(result, base);
-    strcat(result, "/");
-    strcat(result, relative);
+    C32_ASM_STRCAT(result, base);
+    C32_ASM_STRCAT(result, "/");
+    C32_ASM_STRCAT(result, relative);
 
     return result;
 }
@@ -167,7 +160,7 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
 
     unsigned int i = 0;
     unsigned char* code = *codePtr;
-    char* string = malloc(1);
+    char* string = (char*)C32_ASM_MALLOC(1);
     unsigned long hash = 5381;
 
     string[0] = '\0';
@@ -184,7 +177,7 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
 
         hash = (hash << 5) + hash + code[i];
 
-        string = realloc(string, i + 2);
+        string = (char*)C32_ASM_REALLOC(string, i + 2);
         string[i] = code[i];
         string[i + 1] = '\0';
 
@@ -192,7 +185,7 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
     }
 
     if (i == 0) {
-        free(string);
+        C32_ASM_FREE(string);
 
         return false;
     }
@@ -201,7 +194,7 @@ bool matchIdentifier(char** codePtr, unsigned long* result) {
     *result = hash;
 
     if (!idHashToString(hash)) {
-        CachedIdentifier* cachedIdentifier = malloc(sizeof(CachedIdentifier));
+        CachedIdentifier* cachedIdentifier = (CachedIdentifier*)C32_ASM_MALLOC(sizeof(CachedIdentifier));
 
         cachedIdentifier->idHash = hash;
         cachedIdentifier->string = string;
@@ -238,12 +231,12 @@ bool matchString(char** codePtr, char** resultPtr) {
         return false;
     }
 
-    char* result = malloc(1);
+    char* result = (char*)C32_ASM_MALLOC(1);
     unsigned int resultLength = 0;
 
     while (code[i] != '"') {
         if (code[i] == '\0') {
-            free(result);
+            C32_ASM_FREE(result);
 
             return false;
         }
@@ -254,7 +247,7 @@ bool matchString(char** codePtr, char** resultPtr) {
             c = getEscapeChar(code[i++]);
         }
 
-        result = realloc(result, resultLength + 1);
+        result = (char*)C32_ASM_REALLOC(result, resultLength + 1);
         result[resultLength++] = c;
     }
 
@@ -271,25 +264,25 @@ bool matchString(char** codePtr, char** resultPtr) {
 bool matchPath(char** codePtr, char** resultPtr) {
     unsigned int i = 0;
     unsigned char* code = *codePtr;
-    char* result = malloc(1);
+    char* result = (char*)C32_ASM_MALLOC(1);
     unsigned int resultLength = 0;
     bool corelib = false;
     bool escaping = false;
 
     if (code[i] != '.') {
-        char selfPath[PATH_MAX];
+        char selfPath[C32_ASM_PATH_MAX];
 
-        readlink("/proc/self/exe", selfPath, PATH_MAX);
+        C32_ASM_GET_SELF_PATH(selfPath);
 
-        char* prefix = joinPaths(dirname(selfPath), "../../corelib/");
+        char* prefix = joinPaths(C32_ASM_DIRNAME(selfPath), "../../corelib/");
 
         corelib = true;
-        resultLength = strlen(prefix);
-        result = realloc(result, resultLength + 1);
+        resultLength = C32_ASM_STRLEN(prefix);
+        result = (char*)C32_ASM_REALLOC(result, resultLength + 1);
 
-        strcpy(result, prefix);
+        C32_ASM_STRCPY(result, prefix);
 
-        free(prefix);
+        C32_ASM_FREE(prefix);
     }
 
     while (code[i] != '\0' && (escaping || code[i] != ' ' && code[i] != '\t' && code[i] != '\n')) {
@@ -299,7 +292,7 @@ bool matchPath(char** codePtr, char** resultPtr) {
 
         if (escaping) continue;
 
-        result = realloc(result, resultLength + 1);
+        result = (char*)C32_ASM_REALLOC(result, resultLength + 1);
         result[resultLength++] = c;
     }
 
@@ -341,7 +334,7 @@ Token* parse(char* code, char* path) {
     Format resultFormat = FMT_BYTE;
     bool expectSizeOfLocalNext = false;
 
-    if (!includedPaths) includedPaths = malloc(0);
+    if (!includedPaths) includedPaths = (unsigned long*)C32_ASM_MALLOC(0);
 
     while (code[0]) {
         TokenType numberTokenType = TOK_INT;
@@ -543,15 +536,15 @@ Token* parse(char* code, char* path) {
 
                 includedPath = realpath(joinPaths(pathDir, relativePath), NULL);
 
-                free(pathDir);
+                C32_ASM_FREE(pathDir);
 
                 if (!includedPath) {
-                    fprintf(stderr, "Invalid path: %s\n", relativePath);
+                    C32_ASM_PRINTF_STDERR("Invalid path: %s\n", relativePath);
 
                     goto error;
                 }
 
-                free(relativePath);
+                C32_ASM_FREE(relativePath);
             } else {
                 includedPath = relativePath;
             }
@@ -562,9 +555,9 @@ Token* parse(char* code, char* path) {
                 if (includedPaths[i] == hashedPath) goto skipInclusion;
             }
 
-            printf("Including: %s\n", includedPath);
+            C32_ASM_PRINTF("Including: %s\n", includedPath);
 
-            includedPaths = realloc(includedPaths, sizeof(unsigned long) * (++includedPathsCount));
+            includedPaths = (unsigned long*)C32_ASM_REALLOC(includedPaths, sizeof(unsigned long) * (++includedPathsCount));
             includedPaths[includedPathsCount - 1] = hashedPath;
 
             if (!readFile(includedPath, &includedCode, NULL)) goto error;
@@ -581,7 +574,7 @@ Token* parse(char* code, char* path) {
 
             skipInclusion:
 
-            free(includedPath);
+            C32_ASM_FREE(includedPath);
 
             continue;
         }
@@ -623,7 +616,7 @@ Token* parse(char* code, char* path) {
 
         addToken:
 
-        Token* tokenPtr = malloc(sizeof(Token));
+        Token* tokenPtr = (Token*)C32_ASM_MALLOC(sizeof(Token));
 
         tokenPtr->type = tokenToAdd.type;
         tokenPtr->value = tokenToAdd.value;

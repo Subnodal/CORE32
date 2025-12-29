@@ -1,5 +1,5 @@
-#ifndef CORE32_H_
-#define CORE32_H_
+#ifndef C32_H_
+#define C32_H_
 
 #include <stdlib.h>
 #include <stdint.h>

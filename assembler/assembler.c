@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-
+#include "config.h"
 #include "assembler.h"
 
 const char WIDTHS[4] = {1, 2, 4, 4};
@@ -33,9 +31,9 @@ void grow() {
     if (oldLength / BLOCK_SIZE < length / BLOCK_SIZE) {
         unsigned long baseLength = (length / BLOCK_SIZE) * BLOCK_SIZE;
 
-        if (showDebugMessages) printf("Growing from 0x%08x\n", baseLength);
+        if (showDebugMessages) C32_ASM_PRINTF("Growing from 0x%08x\n", baseLength);
 
-        output = realloc(output, baseLength + BLOCK_SIZE);
+        output = (char*)C32_ASM_REALLOC(output, baseLength + BLOCK_SIZE);
 
         for (unsigned int i = oldLength + 1; i < baseLength + BLOCK_SIZE; i++) {
             output[i] = '\0';
@@ -83,18 +81,18 @@ char getFormatLength(Format format) {
 }
 
 void createLabel(unsigned long globalIdHash, unsigned long localIdHash) {
-    Label* label = malloc(sizeof(Label));
+    Label* label = (Label*)C32_ASM_MALLOC(sizeof(Label));
 
     label->globalIdHash = globalIdHash;
     label->localIdHash = localIdHash;
     label->pos = pos;
-    label->next = NULL;
+    label->next = C32_ASM_NULL;
 
     if (showDebugMessages) {
         if (localIdHash) {
-            fprintf(stderr, "Created label: %s.%s\n", idHashToString(globalIdHash), idHashToString(localIdHash));
+            C32_ASM_PRINTF_STDERR("Created label: %s.%s\n", idHashToString(globalIdHash), idHashToString(localIdHash));
         } else {
-            fprintf(stderr, "Created label: %s\n", idHashToString(globalIdHash));
+            C32_ASM_PRINTF_STDERR("Created label: %s\n", idHashToString(globalIdHash));
         }
     }
 
@@ -105,12 +103,12 @@ void createLabel(unsigned long globalIdHash, unsigned long localIdHash) {
 }
 
 void createReference(Token* token, unsigned long globalIdHash) {
-    Reference* reference = malloc(sizeof(Reference));
+    Reference* reference = (Reference*)C32_ASM_MALLOC(sizeof(Reference));
 
     reference->pos = pos;
     reference->token = token;
     reference->globalIdHash = globalIdHash;
-    reference->next = NULL;
+    reference->next = C32_ASM_NULL;
 
     if (!firstReference) firstReference = reference;
     if (lastReference) lastReference->next = reference;
@@ -120,14 +118,14 @@ void createReference(Token* token, unsigned long globalIdHash) {
 }
 
 void pushGroupLevel(Token* token) {
-    GroupLevel* groupLevel = malloc(sizeof(GroupLevel));
+    GroupLevel* groupLevel = (GroupLevel*)C32_ASM_MALLOC(sizeof(GroupLevel));
 
-    if (showDebugMessages) printf("Open group %c\n", token->value.asGroupType);
+    if (showDebugMessages) C32_ASM_PRINTF("Open group %c\n", token->value.asGroupType);
     
     groupLevel->pos = pos;
     groupLevel->token = token;
     groupLevel->prev = lastGroupLevel;
-    groupLevel->next = NULL;
+    groupLevel->next = C32_ASM_NULL;
 
     if (!firstGroupLevel) firstGroupLevel = groupLevel;
     if (lastGroupLevel) lastGroupLevel->next = groupLevel;
@@ -145,20 +143,20 @@ bool popGroupLevel(GroupLevel* groupLevel) {
     lastGroupLevel = lastGroupLevel->prev;
 
     if (lastGroupLevel) {
-        lastGroupLevel->next = NULL;
+        lastGroupLevel->next = C32_ASM_NULL;
     } else {
-        firstGroupLevel = NULL;
+        firstGroupLevel = C32_ASM_NULL;
     }
 
     return true;
 }
 
 void createMacro(unsigned long idHash, Token* firstToken) {
-    Macro* macro = malloc(sizeof(Macro));
+    Macro* macro = (Macro*)C32_ASM_MALLOC(sizeof(Macro));
 
     macro->idHash = idHash;
     macro->firstToken = firstToken;
-    macro->next = NULL;
+    macro->next = C32_ASM_NULL;
 
     if (!firstMacro) firstMacro = macro;
     if (lastMacro) lastMacro->next = macro;
@@ -167,12 +165,12 @@ void createMacro(unsigned long idHash, Token* firstToken) {
 }
 
 void pushMacroLevel(Token* continueToken) {
-    MacroLevel* macroLevel = malloc(sizeof(MacroLevel));
+    MacroLevel* macroLevel = (MacroLevel*)C32_ASM_MALLOC(sizeof(MacroLevel));
     
     macroLevel->continueToken = continueToken;
     macroLevel->baseGroupLevel = lastGroupLevel;
     macroLevel->prev = lastMacroLevel;
-    macroLevel->next = NULL;
+    macroLevel->next = C32_ASM_NULL;
 
     if (!firstMacroLevel) firstMacroLevel = macroLevel;
     if (lastMacroLevel) lastMacroLevel->next = macroLevel;
@@ -192,9 +190,9 @@ bool popMacroLevel(MacroLevel* macroLevel) {
     macroLevelCount--;
 
     if (lastMacroLevel) {
-        lastMacroLevel->next = NULL;
+        lastMacroLevel->next = C32_ASM_NULL;
     } else {
-        firstMacroLevel = NULL;
+        firstMacroLevel = C32_ASM_NULL;
     }
 
     return true;
@@ -212,12 +210,12 @@ Label* resolveLabel(unsigned long globalIdHash, unsigned long localIdHash) {
     }
 
     if (localIdHash) {
-        fprintf(stderr, "Cannot resolve label: %s.%s\n", idHashToString(globalIdHash), idHashToString(localIdHash));
+        C32_ASM_PRINTF_STDERR("Cannot resolve label: %s.%s\n", idHashToString(globalIdHash), idHashToString(localIdHash));
     } else {
-        fprintf(stderr, "Cannot resolve label: %s\n", idHashToString(globalIdHash));
+        C32_ASM_PRINTF_STDERR("Cannot resolve label: %s\n", idHashToString(globalIdHash));
     }
 
-    return NULL;
+    return C32_ASM_NULL;
 }
 
 void setLabelSize(unsigned long globalIdHash, unsigned long localIdHash, unsigned long size) {
@@ -259,7 +257,7 @@ void resolveReferences() {
 
             case TOK_ADDR_EXT: case TOK_LOCAL_OFFSET_EXT: {
                 if (!token->next || token->next->type != TOK_CALL) {
-                    fprintf(stderr, "Invalid subsequent token\n");
+                    C32_ASM_PRINTF_STDERR("Invalid subsequent token\n");
                     break;
                 }
 
@@ -282,13 +280,13 @@ void resolveReferences() {
             }
 
             case TOK_SIZE_OF: case TOK_SIZE_OF_EXT: {
-                Label* label = NULL;
+                Label* label = C32_ASM_NULL;
 
                 if (token->format == FMT_LOCAL) {
                     label = resolveLabel(reference->globalIdHash, token->value.asIdHash);
                 } else if (token->type == TOK_SIZE_OF_EXT) {
                     if (!token->next || token->next->type != TOK_CALL) {
-                        fprintf(stderr, "Invalid subsequent token\n");
+                        C32_ASM_PRINTF_STDERR("Invalid subsequent token\n");
                         break;
                     }
 
@@ -304,11 +302,11 @@ void resolveReferences() {
             }
 
             default:
-                fprintf(stderr, "Reference type not implemented\n");
+                C32_ASM_PRINTF_STDERR("Reference type not implemented\n");
                 break;
 
             undefinedReference:
-                fprintf(stderr, "Undefined reference\n");
+                C32_ASM_PRINTF_STDERR("Undefined reference\n");
                 break;
         }
 
@@ -320,7 +318,7 @@ void resolveGroupLevel() {
     GroupLevel groupLevel;
 
     if (!popGroupLevel(&groupLevel)) {
-        fprintf(stderr, "Mismatched group bracket\n");
+        C32_ASM_PRINTF_STDERR("Mismatched group bracket\n");
         return;
     }
 
@@ -338,7 +336,7 @@ void resolveGroupLevel() {
         pos++; // Offset by another byte due to `not` op
     }
 
-    if (showDebugMessages) printf("Resolve group close to address 0x%08x\n", pos);
+    if (showDebugMessages) C32_ASM_PRINTF("Resolve group close to address 0x%08x\n", pos);
 
     if (groupType == GROUP_QUOTED) {
         // Offset pos by 11 to skip over `put` + long + `put` + long + `jump`
@@ -360,7 +358,7 @@ Macro* reoslveMacro(unsigned long idHash) {
         macro = macro->next;
     }
 
-    return NULL;
+    return C32_ASM_NULL;
 }
 
 void addC32Header() {
@@ -395,19 +393,19 @@ void addC32References() {
 }
 
 void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, bool useC32Format) {
-    output = malloc(BLOCK_SIZE);
+    output = (char*)C32_ASM_MALLOC(BLOCK_SIZE);
     pos = 0x400;
     length = 0;
-    firstLabel = NULL;
-    lastLabel = NULL;
-    firstReference = NULL;
-    lastReference = NULL;
-    firstGroupLevel = NULL;
-    lastGroupLevel = NULL;
-    firstMacro = NULL;
-    lastMacro = NULL;
-    firstMacroLevel = NULL;
-    lastMacroLevel = NULL;
+    firstLabel = C32_ASM_NULL;
+    lastLabel = C32_ASM_NULL;
+    firstReference = C32_ASM_NULL;
+    lastReference = C32_ASM_NULL;
+    firstGroupLevel = C32_ASM_NULL;
+    lastGroupLevel = C32_ASM_NULL;
+    firstMacro = C32_ASM_NULL;
+    lastMacro = C32_ASM_NULL;
+    firstMacroLevel = C32_ASM_NULL;
+    lastMacroLevel = C32_ASM_NULL;
     macroLevelCount = 0;
     referenceCount = 0;
 
@@ -497,7 +495,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
 
             case TOK_RAW_CLOSE:
                 if (rawLevel == 0) {
-                    fprintf(stderr, "Mismatched raw bracket\n");
+                    C32_ASM_PRINTF_STDERR("Mismatched raw bracket\n");
                     break;
                 }
                 rawLevel--;
@@ -529,13 +527,13 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 break;
 
             case TOK_SIZE_OF_OFFSET: case TOK_SIZE_OF_OFFSET_EXT: {
-                Label* label = NULL;
+                Label* label = C32_ASM_NULL;
 
                 if (token->format == FMT_LOCAL) {
                     label = resolveLabel(currentGlobalHashId, token->value.asIdHash);
                 } else if (token->type == TOK_SIZE_OF_OFFSET_EXT) {
                     if (!token->next || token->next->type != TOK_CALL) {
-                        fprintf(stderr, "Invalid subsequent token\n");
+                        C32_ASM_PRINTF_STDERR("Invalid subsequent token\n");
                         break;
                     }
 
@@ -546,7 +544,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 }
 
                 if (!label) {
-                    fprintf(stderr, "Undefined reference (note: future references not allowed)\n");
+                    C32_ASM_PRINTF_STDERR("Undefined reference (note: future references not allowed)\n");
                     break;
                 }
 
@@ -558,12 +556,12 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
                 Macro* macro = reoslveMacro(token->value.asIdHash);
 
                 if (!macro) {
-                    fprintf(stderr, "Undefined macro\n");
+                    C32_ASM_PRINTF_STDERR("Undefined macro\n");
                     break;
                 }
 
                 if (macroLevelCount >= MAX_MACRO_DEPTH - 1) {
-                    fprintf(stderr, "Maximum macro depth limit reached\n");
+                    C32_ASM_PRINTF_STDERR("Maximum macro depth limit reached\n");
                     break;
                 }
 
@@ -596,7 +594,7 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
             }
 
             default:
-                fprintf(stderr, "Token type not implemented\n");
+                C32_ASM_PRINTF_STDERR("Token type not implemented\n");
                 break;
         }
 
@@ -626,6 +624,6 @@ void assemble(Token* firstToken, char** outputPtr, unsigned long* lengthPtr, boo
         addC32References();
     }
 
-    *outputPtr = realloc(output, length);
+    *outputPtr = (char*)C32_ASM_REALLOC(output, length);
     *lengthPtr = length;
 }

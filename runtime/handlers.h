@@ -1,5 +1,5 @@
-#ifndef CORE32_HANDLERS_H_
-#define CORE32_HANDLERS_H_
+#ifndef C32_HANDLERS_H_
+#define C32_HANDLERS_H_
 
 #include "core32.h"
 
