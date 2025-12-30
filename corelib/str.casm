@@ -1,0 +1,40 @@
+str_size: ( $str -> size )
+    0                           ( $str size )
+
+    .loop:
+        swap                    ( size $str )
+
+        dup get' 0' =' ?{       ( size $str )
+            ( Reached null terminator )
+            drop ret
+        }
+
+        ++                      ( size $str )
+        swap ++                 ( $str size )
+
+        $.loop jump
+
+str_length: ( $str -> length )
+    0                           ( $str size )
+
+    .loop:
+        swap                    ( size $str )
+
+        dup get'                ( size $str char' )
+        
+        dup' 0' =' ?{           ( size $str char' )
+            ( Reached null terminator )
+            drop' drop ret
+        }
+
+        0xC0' &' 0x80' =' ?{    ( size $str )
+            ( Matches UTF-8 continuation byte, so skip over )
+            ++                  ( size $str )
+            swap                ( $str size )
+            $.loop jump
+        }
+
+        ++                      ( size $str )
+        swap ++                 ( $str size )
+
+        $.loop jump

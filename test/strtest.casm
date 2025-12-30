@@ -1,0 +1,22 @@
+start:
+    lengthTest ret
+
++io.casm
++str.casm
+
+lengthTest:
+    ${.reportLength: ( $str -> )
+        {"String: " print} {dup print} {"\n" print}
+        {"Size: " print} {dup str_size printLong} {"\n" print}
+        {"Length: " print} {dup str_length printLong} {"\n" print}
+
+        drop ret
+    }
+
+    "String length test\n" print
+
+    "hello" .reportLength
+    "héllo thère" .reportLength
+    "你好，你好吗？" .reportLength
+
+    ret

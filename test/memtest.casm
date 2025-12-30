@@ -5,7 +5,7 @@ start:
         {print ": " print}
         {dup get printLongHex}
 
-        mem_getSize dup 0 != ?{
+        mem_size dup 0 != ?{
             {" (size " print} {_mem_Block~ - printLong} {")" print}
             1'
         } !' ?{

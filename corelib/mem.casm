@@ -288,7 +288,7 @@ mem_resize: ( size $addrPtr -> success' )
 mem_setHeapBase: ( $addr -> )
     $_mem_heapBase set ret
 
-mem_getSize: ( $addrPtr -> )
+mem_size: ( $addrPtr -> size )
     get
     dup 0 = ?{0 ret}
     _mem_Block~ - _mem_blockSize _mem_Block~ + ret
