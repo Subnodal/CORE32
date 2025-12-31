@@ -66,7 +66,7 @@ file_read: ( count fd -> $data )
         dup                         ( $buffer cappedCount $writePos $writePos )
         {$.fd get} file_readChar    ( $buffer cappedCount $writePos $writePos char' success' )
 
-        !' ?{                       ( $buffer cappedCount $writePos $writePos char' )
+        0' =' ?{                    ( $buffer cappedCount $writePos $writePos char' )
             ( Unsuccessful read, return null address )
             drop' drop drop drop drop
             0 ret
@@ -103,7 +103,7 @@ file_write: ( $buffer count fd -> success' )
         $.fd get        ( count $readPos char' fd )
         file_writeChar  ( count $readPos success' )
 
-        !' ?{           ( count $readPos )
+        0' =' ?{        ( count $readPos )
             ( Unsuccessful write, return failure )
             drop drop drop
             0' ret
@@ -125,12 +125,12 @@ file_becomeWriter: ( fd -> )
     .writer:
         $.fd get
         file_writeChar
-        !' ?{1' $_file_hadWriterErrors set}
+        0' =' ?{1' $_file_hadWriterErrors set}
         ret
 
 file_releaseWriter: ( -> success' )
     io_unsetWriter
-    $_file_hadWriterErrors get !' ret
+    $_file_hadWriterErrors get 0' =' ret
 
 +io.casm
 +mem.casm

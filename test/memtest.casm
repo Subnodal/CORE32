@@ -8,7 +8,7 @@ start:
         mem_size dup 0 != ?{
             {" (size " print} {_mem_Block~ - printLong} {")" print}
             1'
-        } !' ?{
+        } 0' =' ?{
             " (null)" print
         }
 

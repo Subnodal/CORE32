@@ -118,7 +118,7 @@ mem_new: ( size -> $addr )
 
                 0 {{$.currentBlock get} _mem_Block~ + {$.size get} +} set ( Create a new last block after this one )
                 {$.size get} {$.currentBlock get} set ( Set this block's size )
-            } !' ?{
+            } 0' =' ?{
                 $.totalUsableSize get {$.originalBlock get} set
 
                 {$.totalUsableSize get} {$.size get _mem_Block~ +} < ?{

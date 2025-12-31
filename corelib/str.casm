@@ -1,3 +1,7 @@
+#STR_COMPARE_BEFORE:    0xFF'
+#STR_COMPARE_EQUAL:     0x00'
+#STR_COMPARE_AFTER:     0x01'
+
 str_size: ( $str -> size )
     0                           ( $str size )
 
@@ -38,3 +42,48 @@ str_length: ( $str -> length )
         swap ++                 ( $str size )
 
         $.loop jump
+
+str_compare: ( $a $b -> result' )
+    over over = ?{
+        ( Return equal if addresses are equal )
+        drop drop #STR_COMPARE_EQUAL ret
+    }
+
+    ${.a: [0] .b: [0]}
+
+    $.b set
+    $.a set
+
+    .loop:
+        $.a get get'
+        $.b get get'
+
+        over' over' 0' =' swap' 0' =' &' ?{
+            ( Return equal if reached null terminators of both strings )
+            drop' drop' #STR_COMPARE_EQUAL ret
+        }
+
+        over' over' <' ?{
+            ( $a is alphabetically before $b )
+            drop' drop' #STR_COMPARE_BEFORE ret
+        }
+
+        >' ?{
+            ( $a is alphabetically after $b )
+            #STR_COMPARE_AFTER ret
+        }
+
+        ( Increment addresses )
+        $.a get ++ $.a set
+        $.b get ++ $.b set
+
+        $.loop jump
+
+str_eq: ( $a $b -> equal' )
+    str_compare #STR_COMPARE_EQUAL =' ret
+
+str_neq: ( $a $b -> notEqual' )
+    str_eq 0' =' ret
+
+str=: str_eq ret
+str!=: str_neq ret

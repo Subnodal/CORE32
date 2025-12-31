@@ -9,7 +9,7 @@ fd: [0]
 writeTest:
     "File write test\n" print
 
-    "test/writetest.txt" #FILE_WRITE #FILE_CREATE | file_open !' ?{
+    "test/writetest.txt" #FILE_WRITE #FILE_CREATE | file_open 0' =' ?{
         "Failed to open file\n" print
         ret
     }
@@ -18,17 +18,17 @@ writeTest:
 
     {"File opened with fd " print} {$fd get printLong} {"\n" print}
 
-    'A' {$fd get} file_writeChar !' ?{
+    'A' {$fd get} file_writeChar 0' =' ?{
         "Failed to write to file\n" print
         ret
     }
 
-    'B' {$fd get} file_writeChar !' ?{
+    'B' {$fd get} file_writeChar 0' =' ?{
         "Failed to write to file\n" print
         ret
     }
 
-    "test" 4 {$fd get} file_write !' ?{
+    "test" 4 {$fd get} file_write 0' =' ?{
         "Failed to write buffer to file\n" print
         ret
     }
@@ -49,7 +49,7 @@ writeTest:
 readTest:
     "File read test\n" print
 
-    "test/writetest.txt" #FILE_READ file_open !' ?{
+    "test/writetest.txt" #FILE_READ file_open 0' =' ?{
         "Failed to open file\n" print
         ret
     }
@@ -59,7 +59,7 @@ readTest:
     {"File opened with fd " print} {$fd get printLong} {"\n" print}
     {"File size: " print} {$fd get file_size printLong} {"\n" print}
 
-    5 {$fd get} file_seek !' ?{
+    5 {$fd get} file_seek 0' =' ?{
         "Failed to seek\n" print
         ret
     }
@@ -67,14 +67,14 @@ readTest:
     {"Seeked to pos: " print} {$fd get file_tell printLong} {"\n" print}
     {"Stream char available? " print} {$fd get file_available from' to printLong} {"\n" print}
 
-    {$fd get} file_readChar !' ?{
+    {$fd get} file_readChar 0' =' ?{
         "Failed to read\n" print
         ret
     }
 
     {"Char read: " print} {printChar} {"\n" print}
 
-    0 {$fd get} file_seek !' ?{
+    0 {$fd get} file_seek 0' =' ?{
         "Failed to seek\n" print
         ret
     }

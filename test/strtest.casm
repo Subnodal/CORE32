@@ -1,5 +1,5 @@
 start:
-    lengthTest ret
+    lengthTest compareTest ret
 
 +io.casm
 +str.casm
@@ -18,5 +18,33 @@ lengthTest:
     "hello" .reportLength
     "héllo thère" .reportLength
     "你好，你好吗？" .reportLength
+
+    ret
+
+compareTest:
+    ${.reportCompare: ( $a $b -> )
+        over over swap
+        {"A: " print} {print} {" - B: " print} {print} {"\n" print}
+        {"Equal? " print} {over over str= printByteHex} {"\n" print}
+        {"Not equal? " print} {over over str!= printByteHex} {"\n" print}
+
+        "Comparison: " print
+
+        str_compare
+
+        dup' #STR_COMPARE_BEFORE =' ?{"A before B\n" print}
+        dup' #STR_COMPARE_AFTER =' ?{"A after B\n" print}
+        #STR_COMPARE_EQUAL =' ?{"equal\n" print}
+
+        ret
+    }
+
+    "String comparison test\n" print
+
+    "hello" "hello" .reportCompare
+    "hello" "hallo" .reportCompare
+    "hallo" "hello" .reportCompare
+    "hi" "hello" .reportCompare
+    "hello" "hi" .reportCompare
 
     ret

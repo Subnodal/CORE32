@@ -170,7 +170,13 @@ bool c32_matchIdentifier(char** codePtr, unsigned long* result) {
             (code[i] >= 'a' && code[i] <= 'z') ||
             (code[i] >= 'A' && code[i] <= 'Z') ||
             code[i] == '_' ||
-            (i > 0 && code[i] >= '0' && code[i] <= '9')
+            (i > 0 && (
+                (code[i] >= '0' && code[i] <= '9') ||
+                code[i] == '%' || code[i] == '-' || code[i] == '+' || code[i] == '/' || code[i] == '*' ||
+                code[i] == '|' || code[i] == '^' || code[i] == '&' ||
+                code[i] == '!' || code[i] == '=' || code[i] == '<' || code[i] == '>' ||
+                code[i] == '\'' || code[i] == '"'
+            ))
         )) {
             break;
         }
@@ -204,9 +210,9 @@ bool c32_matchIdentifier(char** codePtr, unsigned long* result) {
         if (lastCachedIdentifier) lastCachedIdentifier->next = cachedIdentifier;
 
         lastCachedIdentifier = cachedIdentifier;
+    } else {
+        C32_ASM_FREE(string);
     }
-
-    C32_ASM_FREE(string);
 
     return true;
 }
