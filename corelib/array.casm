@@ -1,0 +1,72 @@
+Array:
+    .elementSize: [0]
+    .elements: [0]
+    .length: [0]
+    .capacity: [0]
+
+array_new: ( elementSize -> $addr )
+    ${.array: [0] .elementSize: [0]}
+
+    $.elementSize set
+
+    Array~ mem_new {dup 0 = ?{ret}} $.array set
+
+    {$.elementSize get} {$.array get #Array.elementSize +} set
+    {0 mem_new {dup 0 = ?{ret}}} {$.array get #Array.elements +} set
+    0 {$.array get #Array.length +} set
+    0 {$.array get #Array.capacity +} set
+
+    $.array get ret
+
+array_free: ( $arrayPtr -> )
+    dup get #Array.elements + mem_free
+    mem_free
+    ret
+
+array_reserve: ( newCapacity $arrayPtr -> success' )
+    ${.array: [0] .newCapacity: [0]}
+
+    get $.array set
+    $.newCapacity set
+
+    {$.newCapacity get} {$.array get #Array.length + get} < ?{
+        ( New capacity less than current length, so do nothing )
+        1' ret
+    }
+
+    {{$.array get #Array.elementSize + get} $.newCapacity get *}
+    {$.array get #Array.elements +}
+    mem_resize
+
+    ret
+
+array_index: ( index $arrayPtr -> $addr )
+    ${.array: [0] .index: [0]}
+
+    get $.array set
+    $.index set
+
+    {$.index get} {$.array get #Array.length + get} < 0' =' ?{
+        ( Index is outside array bounds, so return null address )
+        0 ret
+    }
+
+    {{$.index get} {$.array get #Array.elementSize + get} *} {$.array get #Array.elements + get} +
+    ret
+
+array_push: ( $arrayPtr -> $addr )
+    ${.array: [0] .index: [0]}
+
+    get $.array set
+    {$.array get #Array.length + get} $.index set
+
+    $.index get ++ dup $.array array_reserve 0' =' ?{
+        ( Cannot allocate memory, so return null address )
+        drop 0 ret
+    }
+
+    $.array get #Array.length + set
+
+    $.index get $.array array_index ret
+
++mem.casm

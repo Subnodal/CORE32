@@ -1,0 +1,61 @@
+start:
+    testPush ret
+
++io.casm
++array.casm
+
+Person:
+    .name: [0]
+    .age: [0]
+    .team: [0']
+
+testPush:
+    ${.people: [0]}
+
+    ${.addPerson: ( $name age team' -> )
+        ${.person: [0]}
+
+        $.people array_push dup 0 = ?{
+            "Cannot push on array\n" print
+            drop ret
+        } $.person set
+
+        $.person get #Person.team + set'
+        $.person get #Person.age + set
+        $.person get #Person.name + set
+
+        ret
+    }
+
+    ${.reportPeople: ( -> )
+        ${.person: [0]}
+
+        0
+
+        "=== People report ===\n" print
+
+        .reportLoop:
+            dup $.people array_index dup 0 = ?{drop ret} $.person set
+
+            $.person get #Person.name + get print
+            " is " print
+            $.person get #Person.age + get printLong
+            " years old and is on team " print
+            $.person get #Person.team + get' printChar
+            "\n" print
+
+            ++
+            $.reportLoop jump
+    }
+
+    Person~ array_new $.people set
+
+    "Alice" 20 'X' .addPerson
+    "Bob" 42 'O' .addPerson
+    "Charlie" 34 'X' .addPerson
+
+    .reportPeople
+
+    $.people array_free
+
+    ret
