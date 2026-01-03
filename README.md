@@ -8,7 +8,7 @@ To build the CORE32 runtime and assembler, run:
 ./build.sh
 ```
 
-To run the runtime with the binary file `$FILE`, run:
+To run the binary file `$FILE` using the runtime, run:
 
 ```bash
 runtime/build/core32 $FILE
