@@ -2,7 +2,7 @@
 A small, stack-based virtual machine and assembly language.
 
 ## Building and running
-To build the CORE32 runtime and assembler, run:
+To build the CORE32 runtime and assembler, run the build script:
 
 ```bash
 ./build.sh
